@@ -414,25 +414,27 @@ import Footer from '../components/Footer.astro';
     let activeCat = "";
     let exactDistanceFilter: { value: number; tolerance: number } | null = null;
     let debounceTimer: ReturnType<typeof setTimeout>;
+    const DISTANCE_PRESET_TOLERANCE_KM = 7;
 
     const distancePresetMap: Record<string, { label: string; value: number; tolerance?: number }[]> = {
         Laufen: [
-            { label: '5 km', value: 5 },
-            { label: '10 km', value: 10 },
-            { label: 'Halbmarathon', value: 21.1 },
-            { label: 'Marathon', value: 42.2 }
+            { label: '5 km', value: 5, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: '10 km', value: 10, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Halbmarathon', value: 21.1, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Marathon', value: 42.2, tolerance: DISTANCE_PRESET_TOLERANCE_KM }
         ],
         Radrennen: [
-            { label: 'Kurzstrecke', value: 60 },
-            { label: 'Jedermann', value: 100 },
-            { label: 'Gran Fondo', value: 160 },
-            { label: 'Radmarathon', value: 200 }
+    
+            { label: 'Kurzstrecke', value: 60, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Jedermann', value: 100, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Gran Fondo', value: 160, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Radmarathon', value: 200, tolerance: DISTANCE_PRESET_TOLERANCE_KM }
         ],
         Triathlon: [
-            { label: 'Sprint', value: 26, tolerance: 0.6 },
-            { label: 'Olympisch', value: 52, tolerance: 0.6 },
-            { label: 'Mitteldistanz', value: 113, tolerance: 0.6 },
-            { label: 'Langdistanz', value: 226, tolerance: 0.6 }
+            { label: 'Sprint', value: 26, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Olympisch', value: 52, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Mitteldistanz', value: 113, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
+            { label: 'Langdistanz', value: 226, tolerance: DISTANCE_PRESET_TOLERANCE_KM }
         ]
     };
 
@@ -629,7 +631,7 @@ import Footer from '../components/Footer.astro';
 
         let filtered = data || [];
 
-        // Distanz-Chips filtern exakt; das Eingabefeld filtert bis einschließlich km.
+        // Distanz-Chips filtern um den Preset-Zielwert; das Eingabefeld filtert bis einschließlich km.
         if (exactDistanceFilter !== null && activeCat && activeCat !== 'Hyrox') {
             filtered = filtered.filter(e => Math.abs((e.distance_km ?? -999) - exactDistanceFilter!.value) <= exactDistanceFilter!.tolerance);
         } else if (distVal && activeCat && activeCat !== 'Hyrox') {
@@ -692,7 +694,7 @@ import Footer from '../components/Footer.astro';
         grid.innerHTML = data.map(e => {
             let distanceAnzeige = `<span class="meta-value">${e.distance || 'N/A'}</span>`;
             if (e.category === 'Triathlon' && e.swim_dist !== null) {
-                distanceAnzeige = `<span class="meta-value" style="font-size:0.85em;">🏊 ${e.swim_dist}km · 🚴 ${e.bike_dist}km · 🏃 ${e.run_dist}km</span>`;
+                distanceAnzeige = `<span class="meta-value" style="font-size:0.85em;"> ${e.swim_dist}km ·  ${e.bike_dist}km ·  ${e.run_dist}km</span>`;
             }
 
             // Entfernung zum gesuchten Ort anzeigen (nur bei Umkreissuche)
