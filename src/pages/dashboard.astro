@@ -577,21 +577,22 @@ container.style.overflow = 'hidden';
         avatarEl.insertAdjacentHTML('beforeend', '<div id="avatar-loading" class="uploading-overlay">Lade...</div>');
 
         try {
-            const fileName = user.id + '-' + Math.random().toString(36).substring(2) + '.jpg';
+            const fileName = user.id + '/avatar.jpg';
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(fileName, blob, { upsert: true, contentType: 'image/jpeg' });
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
+            const displayUrl = publicUrl + '?v=' + Date.now();
 
             const { error: updateError } = await supabase
                 .from('profiles')
-                .update({ avatar_url: publicUrl })
+                .update({ avatar_url: displayUrl, updated_at: new Date().toISOString() })
                 .eq('id', user.id);
             if (updateError) throw updateError;
 
-            avatarEl.innerHTML = '<img src="' + publicUrl + '" alt="Profilbild" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">';
+            avatarEl.innerHTML = '<img src="' + displayUrl + '" alt="Profilbild" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">';
             avatarEl.style.background = "transparent";
             avatarEl.style.border = "none";
 
@@ -634,7 +635,10 @@ container.style.overflow = 'hidden';
 
         const avatarContainer = document.getElementById('profile-avatar');
         if (avatarContainer && profile?.avatar_url) {
-            avatarContainer.innerHTML = '<img src="' + profile.avatar_url + '" alt="Profilbild" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">';
+            const avatarSrc = profile.avatar_url.includes('?v=')
+                ? profile.avatar_url
+                : profile.avatar_url + '?v=' + encodeURIComponent(profile.updated_at || '1');
+            avatarContainer.innerHTML = '<img src="' + avatarSrc + '" alt="Profilbild" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">';
             avatarContainer.style.background = "transparent";
             avatarContainer.style.border = "none";
         }

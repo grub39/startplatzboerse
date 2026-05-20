@@ -394,6 +394,24 @@ import_map = "./functions/send-message-notification/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
 entrypoint = "./functions/send-message-notification/index.ts"
+
+[functions.support-notify-matrix]
+enabled = true
+verify_jwt = false
+import_map = "./functions/support-notify-matrix/deno.json"
+entrypoint = "./functions/support-notify-matrix/index.ts"
+
+[functions.support-matrix-inbound]
+enabled = true
+verify_jwt = false
+import_map = "./functions/support-matrix-inbound/deno.json"
+entrypoint = "./functions/support-matrix-inbound/index.ts"
+
+[functions.support-push-notification]
+enabled = true
+verify_jwt = false
+import_map = "./functions/support-push-notification/deno.json"
+entrypoint = "./functions/support-push-notification/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-message-notification/*.html" ]
