@@ -1,0 +1,148 @@
+/* src/styles/global.css — App-System: #323232 Canvas, #242424 Karten & Inputs */
+:root {
+    --bg-body: #323232;
+    --bg-card: #242424;
+    --bg-input: #242424;
+    --bg-nav: rgba(25, 25, 25, 0.85);
+    --border: #2a2a2a;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-light: rgba(255, 255, 255, 0.05);
+    --cyan: #00bcd4;
+    --cyan-soft: rgba(0, 188, 212, 0.1);
+    --text-main: #ffffff;
+    --text-muted: #888888;
+    --text-secondary: #aaaaaa;
+    --text-faint: #666666;
+    --radius-sm: 12px;
+    --radius-card: 16px;
+    --radius-l: 24px;
+    --font-stack: 'Inter', system-ui, sans-serif;
+    --border-card: 1px solid var(--border-light);
+    --border-card-strong: 1px solid rgba(255, 255, 255, 0.08);
+
+    --bg: var(--bg-body);
+    --bg-actual: var(--bg-body);
+    --card: var(--bg-card);
+    --card-bg: var(--bg-card);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-family: var(--font-stack); background: var(--bg-body); color: var(--text-main); }
+body { overflow-x: hidden; }
+a { text-decoration: none; color: inherit; transition: 0.3s; }
+ul { list-style: none; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.btn { display: inline-block; padding: 12px 24px; border-radius: 50px; font-weight: 600; background: var(--cyan); color: white; }
+.btn:hover { filter: brightness(1.1); }
+
+/* Listing-Karten: Merken-Ecke wie in der App (steveHeartCorner) */
+.listing-card-shell {
+    position: relative;
+    overflow: hidden;
+}
+
+.heart-corner {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    border-top-right-radius: var(--radius-card);
+    border-bottom-left-radius: var(--radius-card);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transform: translate(-3px, 3px);
+    cursor: pointer;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.18);
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.heart-corner.is-saved {
+    color: var(--cyan);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.heart-corner .heart-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.heart-corner.is-saved .heart-icon {
+    fill: currentColor;
+}
+
+.heart-corner:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.heart-corner:hover:not(:disabled) {
+    color: var(--cyan);
+}
+
+/* ZUSAMMENFASSUNG */
+.summary-box {
+    background: var(--bg-card);
+    border: 1px solid rgba(0, 188, 212, 0.25);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 24px;
+}
+
+p.summary-title {
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    color: var(--cyan) !important;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0 0 16px 0;
+}
+
+.summary-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+}
+
+.summary-item {
+    display: grid !important;
+    grid-template-columns: 110px 1fr !important;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    background: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+}
+
+.summary-item:last-child { border-bottom: none; }
+
+.summary-label {
+    font-size: 0.7rem !important;
+    color: var(--cyan) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 !important;
+}
+
+.summary-val {
+    font-size: 0.9rem !important;
+    color: var(--text-secondary) !important;
+    font-weight: 400 !important;
+    word-break: break-word;
+}
+
+.summary-link { color: var(--cyan) !important; text-decoration: none; }
+.summary-link:hover { text-decoration: underline; }

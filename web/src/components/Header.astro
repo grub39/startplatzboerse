@@ -1,0 +1,225 @@
+---
+// src/components/Header.astro
+---
+
+<header class="header-wrapper">
+    
+    <div class="mobile-bar">
+        <a href="/" class="logo mobile-logo">startplatzboerse<span>.com</span></a>
+        
+        <div class="burger-wrapper" id="burger">
+            <button class="menu__icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+
+    <nav class="desktop-dock">
+        <a href="/" class="dock-logo">startplatzboerse<span>.com</span></a>
+        
+        <div class="dock-links">
+            <a href="/suche">Inserate</a>
+            <a href="/ueber-uns">Über uns</a>
+            <a href="/ratgeber">Ratgeber</a>
+            <a href="/#faq">FAQ</a>
+            <a href="/kontakt">Kontakt</a>
+        </div>
+
+        <div class="auth-container">
+            <a href="/login" class="dock-btn" id="login-desktop">Anmelden</a>
+            <a href="/dashboard" class="dock-btn dash-btn" id="dash-desktop" style="display: none;">👤 Mein Konto</a>
+        </div>
+    </nav>
+
+    <div class="mobile-menu-overlay" id="menu">
+        <nav class="mobile-links">
+            <a href="/suche">Inserate</a>
+            <a href="/ueber-uns">Über uns</a>
+            <a href="/ratgeber">Ratgeber</a>
+            <a href="/#faq">FAQ</a>
+            <a href="/kontakt">Kontakt</a>
+            <a href="/login" class="btn-highlight" id="login-mobile">Anmelden</a>
+            <a href="/dashboard" class="btn-highlight dash-btn" id="dash-mobile" style="display: none;">👤 Mein Konto</a>
+        </nav>
+    </div>
+
+</header>
+
+<script>
+    import { createClient } from '@supabase/supabase-js';
+
+    const supabase = createClient(
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    function toggleAuthButtons(isLoggedIn) {
+        const loginDesk = document.getElementById('login-desktop');
+        const dashDesk = document.getElementById('dash-desktop');
+        const loginMob = document.getElementById('login-mobile');
+        const dashMob = document.getElementById('dash-mobile');
+
+        if (isLoggedIn) {
+            if (loginDesk) loginDesk.style.setProperty('display', 'none', 'important');
+            if (dashDesk) dashDesk.style.setProperty('display', 'flex', 'important');
+            
+            if (loginMob) loginMob.style.setProperty('display', 'none', 'important');
+            if (dashMob) dashMob.style.setProperty('display', 'block', 'important');
+        } else {
+            if (loginDesk) loginDesk.style.setProperty('display', 'flex', 'important');
+            if (dashDesk) dashDesk.style.setProperty('display', 'none', 'important');
+            
+            if (loginMob) loginMob.style.setProperty('display', 'block', 'important');
+            if (dashMob) dashMob.style.setProperty('display', 'none', 'important');
+        }
+    }
+
+    async function checkAuth() {
+        const { data: { session } } = await supabase.auth.getSession();
+        toggleAuthButtons(!!session);
+
+        supabase.auth.onAuthStateChange((event, session) => {
+            toggleAuthButtons(!!session);
+            if (event === 'SIGNED_OUT' && window.location.pathname.includes('/dashboard')) {
+                window.location.href = '/';
+            }
+        });
+    }
+
+    const burgerWrapper = document.getElementById('burger');
+    const menuIcon = document.querySelector('.menu__icon');
+    const menu = document.getElementById('menu');
+    const links = document.querySelectorAll('.mobile-links a');
+
+    if(burgerWrapper && menu && menuIcon) {
+        const toggleMenu = () => {
+            menuIcon.classList.toggle('active');
+            menu.classList.toggle('open');
+            document.body.classList.toggle('no-scroll');
+        };
+        burgerWrapper.addEventListener('click', toggleMenu);
+        links.forEach(link => link.addEventListener('click', toggleMenu));
+    }
+
+    checkAuth();
+</script>
+
+<style>
+    .logo, .dock-logo { 
+        font-weight: 900; 
+        font-size: 1.3rem; 
+        color: white; 
+        letter-spacing: -0.5px; 
+        text-decoration: none; 
+        white-space: nowrap; 
+    }
+    .logo span, .dock-logo span { 
+        color: var(--cyan); 
+    }
+
+    .mobile-bar {
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 80px;
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        padding: 0 25px; 
+        z-index: 2000;
+        background: linear-gradient(to bottom, rgba(50,50,50,0.95) 0%, rgba(50,50,50,0) 100%);
+    }
+
+    .burger-wrapper {
+        border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(74, 74, 74, 0.4); backdrop-filter: blur(15px);
+        width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer;
+    }
+    .menu__icon { width: 26px; height: 26px; padding: 2px; background: none; border: none; }
+    .menu__icon span { display: block; width: 100%; height: 2px; border-radius: 2px; background-color: white; transition: 0.4s; position: relative; }
+    .menu__icon span+span { margin-top: 6px; }
+
+    .menu__icon.active span:nth-child(1) { top: 8px; transform: rotate(45deg); background: var(--cyan); }
+    .menu__icon.active span:nth-child(2) { opacity: 0; }
+    .menu__icon.active span:nth-child(3) { bottom: 8px; transform: rotate(-45deg); background: var(--cyan); }
+
+    .mobile-menu-overlay {
+        position: fixed; top: 0; right: -100%; width: 100%; height: 100vh;
+        background: var(--bg-body); z-index: 1500; display: flex; align-items: center; justify-content: center;
+        transition: 0.5s cubic-bezier(0.77,0,0.175,1);
+    }
+    .mobile-menu-overlay.open { right: 0; }
+    .mobile-links { display: flex; flex-direction: column; gap: 30px; text-align: center; }
+    .mobile-links a { font-size: 2rem; font-weight: 700; color: var(--text-muted, #aaa); text-decoration: none; transition: 0.3s; }
+    
+    .mobile-links a:hover, 
+    .mobile-links a.nav-active,
+    .mobile-links a.btn-highlight { 
+        color: var(--cyan); 
+    }
+
+    .desktop-dock { display: none; }
+
+    @media (min-width: 900px) {
+        .mobile-bar, .mobile-menu-overlay { display: none !important; }
+        .desktop-dock {
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            position: fixed; 
+            top: 25px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 1000;
+            width: auto; 
+            min-width: 1050px; 
+            padding: 12px 12px 12px 40px; 
+            border-radius: 100px;
+            gap: 60px; background: rgba(36, 36, 36, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: floatDown 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .dock-logo { margin-right: auto; padding-right: 20px; }
+        .dock-links a { 
+            color: var(--text-muted, #aaa); 
+            font-size: 0.95rem; 
+            font-weight: 500; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            transition: 0.3s; 
+            white-space: nowrap; 
+        }
+        .dock-links a { color: var(--text-muted, #aaa); font-size: 0.95rem; font-weight: 500; text-decoration: none; padding: 8px 16px; border-radius: 20px; transition: 0.3s; }
+        
+        .dock-links a:hover,
+        .dock-links a.nav-active { 
+            color: white; 
+            background: rgba(255,255,255,0.05); 
+        }
+        
+        .dock-links a.nav-active {
+            color: var(--cyan);
+            background: rgba(0, 188, 212, 0.1); 
+            font-weight: 700;
+        }
+
+        .dock-btn {
+            background: var(--cyan); color: black; padding: 12px 28px; border-radius: 50px;
+            font-weight: 700; font-size: 0.9rem; text-decoration: none; transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.25); white-space: nowrap;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .dock-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 188, 212, 0.4); }
+
+        .dash-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; }
+        .dash-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: var(--cyan); }
+    }
+
+    @keyframes floatDown { from { top: -100px; opacity: 0; } to { top: 25px; opacity: 1; } }
+    :global(body.no-scroll) { overflow: hidden; }
+</style>

@@ -1,87 +1,29 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  ensureBotInRoom,
+  ensureTicketMatrixRoom,
+  formatTicketRef,
+  getMatrixConfig,
+  sendMatrixUserMessage,
+} from '../_shared/matrixSupport.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function formatTicketRef(ticketId: string) {
-  return `T-${ticketId.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
-}
-
-function matrixErrorMessage(data: Record<string, unknown>, status: number) {
-  const errcode = typeof data.errcode === 'string' ? data.errcode : '';
-  const error = typeof data.error === 'string' ? data.error : '';
-  return [errcode, error].filter(Boolean).join(': ') ||
-    `Matrix-Anfrage fehlgeschlagen (${status})`;
-}
-
-async function ensureBotInRoom(homeserver: string, accessToken: string, roomId: string) {
-  const joinUrl =
-    `${homeserver}/_matrix/client/v3/join/${encodeURIComponent(roomId)}`;
-  const res = await fetch(joinUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: '{}',
-  });
-
-  const data = await res.json();
-  if (res.ok || data.errcode === 'M_ALREADY_IN_ROOM') return;
-
-  const detail = matrixErrorMessage(data, res.status);
-  if (data.errcode === 'M_UNKNOWN_TOKEN') {
-    throw new Error(
-      `Matrix-Bot-Token ungültig oder abgelaufen (${detail}). Neuen Access Token erzeugen und MATRIX_BOT_ACCESS_TOKEN in Supabase aktualisieren.`,
-    );
-  }
-
-  throw new Error(
-    `Bot kann Support-Raum nicht betreten (${detail}). Bot in Element in den Raum einladen.`,
-  );
-}
-
-async function sendMatrixMessage(
-  homeserver: string,
-  accessToken: string,
-  roomId: string,
-  txnId: string,
-  body: string,
-) {
-  const matrixUrl =
-    `${homeserver}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/send/m.room.message/${txnId}`;
-
-  const matrixRes = await fetch(matrixUrl, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      msgtype: 'm.text',
-      body,
-    }),
-  });
-
-  const matrixData = await matrixRes.json();
-  if (!matrixRes.ok) {
-    throw new Error(matrixErrorMessage(matrixData, matrixRes.status));
-  }
-
-  return matrixData as { event_id?: string };
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let messageId: string | null = null;
+
   try {
     const body = await req.json();
     const record = body.record ?? body;
+    messageId = typeof record?.id === 'string' ? record.id : null;
 
     if (!record?.ticket_id || !record?.message_text) {
       throw new Error('Ungültiger Payload: ticket_id oder message_text fehlt');
@@ -97,24 +39,38 @@ serve(async (req) => {
       );
     }
 
-    const homeserver = Deno.env.get('MATRIX_HOMESERVER')?.replace(/\/$/, '');
-    const accessToken = Deno.env.get('MATRIX_BOT_ACCESS_TOKEN');
-    const roomId = Deno.env.get('MATRIX_SUPPORT_ROOM_ID')?.trim();
-
-    if (!homeserver || !accessToken || !roomId) {
-      throw new Error(
-        'Matrix-Secrets fehlen (Dashboard → Edge Functions → Secrets): MATRIX_HOMESERVER, MATRIX_BOT_ACCESS_TOKEN, MATRIX_SUPPORT_ROOM_ID',
-      );
-    }
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    if (record.id) {
+      const { data: existingMsg } = await supabase
+        .from('support_messages')
+        .select('matrix_event_id')
+        .eq('id', record.id)
+        .maybeSingle();
+
+      if (existingMsg?.matrix_event_id) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            skipped: true,
+            matrix_event_id: existingMsg.matrix_event_id,
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          },
+        );
+      }
+    }
+
+    const matrixConfig = getMatrixConfig();
+
     const { data: ticket, error: ticketError } = await supabase
       .from('support_tickets')
-      .select('id, user_id, subject, status')
+      .select('id, user_id, subject, status, matrix_room_id')
       .eq('id', record.ticket_id)
       .single();
 
@@ -136,58 +92,65 @@ serve(async (req) => {
       userEmail = userData.user.email;
     }
 
-    const ticketRef = formatTicketRef(ticket.id);
     const nickname = profile?.nickname?.trim() || 'Nutzer';
-    const matrixBody = [
-      `[${ticketRef}] Support`,
-      `Von: ${nickname} (${userEmail})`,
-      `Betreff: ${ticket.subject}`,
-      `Status: ${ticket.status}`,
-      '---',
-      record.message_text,
-    ].join('\n');
+    const ticketRef = formatTicketRef(ticket.id);
 
-    const txnId = String(record.id ?? crypto.randomUUID()).replace(/-/g, '');
+    const { roomId } = await ensureTicketMatrixRoom(supabase, matrixConfig, ticket, {
+      nickname,
+      userEmail,
+    });
 
-    await ensureBotInRoom(homeserver, accessToken, roomId);
+    const txnId = `sp_${String(record.id ?? crypto.randomUUID()).replace(/-/g, '')}`;
+
+    await ensureBotInRoom(matrixConfig, roomId);
 
     let matrixData: { event_id?: string };
     try {
-      matrixData = await sendMatrixMessage(
-        homeserver,
-        accessToken,
+      matrixData = await sendMatrixUserMessage(
+        matrixConfig,
         roomId,
         txnId,
-        matrixBody,
+        record.message_text,
       );
     } catch (firstError) {
       const message = firstError instanceof Error ? firstError.message : String(firstError);
       if (message.includes('M_FORBIDDEN') || message.includes('not in the room')) {
-        await ensureBotInRoom(homeserver, accessToken, roomId);
-        matrixData = await sendMatrixMessage(
-          homeserver,
-          accessToken,
+        await ensureBotInRoom(matrixConfig, roomId);
+        matrixData = await sendMatrixUserMessage(
+          matrixConfig,
           roomId,
           txnId,
-          matrixBody,
+          record.message_text,
         );
       } else {
         throw firstError;
       }
     }
 
-    if (matrixData?.event_id && record.id) {
-      await supabase
+    if (!matrixData?.event_id) {
+      throw new Error('Matrix hat keine event_id zurückgegeben');
+    }
+
+    if (record.id) {
+      const { error: updateError } = await supabase
         .from('support_messages')
-        .update({ matrix_event_id: matrixData.event_id })
+        .update({
+          matrix_event_id: matrixData.event_id,
+          matrix_forward_error: null,
+        })
         .eq('id', record.id);
+
+      if (updateError) {
+        throw new Error(`matrix_event_id speichern: ${updateError.message}`);
+      }
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         ticketRef,
-        matrix_event_id: matrixData.event_id ?? null,
+        matrix_room_id: roomId,
+        matrix_event_id: matrixData.event_id,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -197,6 +160,22 @@ serve(async (req) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('support-notify-matrix error:', message);
+
+    if (messageId) {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        );
+        await supabase
+          .from('support_messages')
+          .update({ matrix_forward_error: message.slice(0, 500) })
+          .eq('id', messageId);
+      } catch {
+        /* ignore */
+      }
+    }
+
     return new Response(JSON.stringify({ success: false, error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

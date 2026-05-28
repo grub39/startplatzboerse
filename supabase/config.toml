@@ -401,11 +401,23 @@ verify_jwt = false
 import_map = "./functions/support-notify-matrix/deno.json"
 entrypoint = "./functions/support-notify-matrix/index.ts"
 
+[functions.support-retry-matrix]
+enabled = true
+verify_jwt = false
+import_map = "./functions/support-retry-matrix/deno.json"
+entrypoint = "./functions/support-retry-matrix/index.ts"
+
 [functions.support-matrix-inbound]
 enabled = true
 verify_jwt = false
 import_map = "./functions/support-matrix-inbound/deno.json"
 entrypoint = "./functions/support-matrix-inbound/index.ts"
+
+[functions.support-matrix-diagnose]
+enabled = true
+verify_jwt = false
+import_map = "./functions/support-matrix-diagnose/deno.json"
+entrypoint = "./functions/support-matrix-diagnose/index.ts"
 
 [functions.support-push-notification]
 enabled = true

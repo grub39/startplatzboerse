@@ -1,0 +1,48 @@
+# Learn more: https://docs.github.com/en/get-started/git-basics/ignoring-files
+
+# --- Dependencies ---
+node_modules/
+
+# --- Expo / React Native ---
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+
+# --- Environment & secrets (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Firebase service account (full admin access)
+*firebase-adminsdk*.json
+
+# --- Build & tooling ---
+*.tsbuildinfo
+.kotlin/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Editors / local AI config ---
+.idea/
+.vscode/
+*.swp
+.cursor/
+.claude/
+
+# --- Optional: uncomment if native folders are regenerated via prebuild ---
+# /ios
+# /android

@@ -146,6 +146,8 @@ async function handleSupportPush(supabase: SupabaseClient, record: SupportRecord
       type: 'support',
       ticket_id: ticket.id,
       screen: 'support',
+      /** Zusätzlich für isMessageNotification-Fallback in älteren App-Builds */
+      conversation_id: ticket.id,
     },
   );
 

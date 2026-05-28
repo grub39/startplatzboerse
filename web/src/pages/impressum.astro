@@ -1,0 +1,120 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Impressum ">
+    <main class="legal-wrapper">
+        <div class="container">
+            <a href="/" class="back-link">← Zurück zur Startseite</a>
+            
+            <h1>Impressum</h1>
+            
+            <section>
+                <h2>Angaben gemäß § 5 DDG</h2>
+                <p>
+                    <strong>Dustin Rose</strong><br />
+                    Lindenplan 26<br />
+                    39120 Magdeburg
+                </p>
+                <p>
+                    <strong>Kontakt:</strong><br />
+                    E-Mail: <a href="mailto:info@startplatzboerse.com">info@startplatzboerse.com</a><br />
+                    Telefon: Auf Anfrage (rein private Webseite)
+                </p>
+            </section>
+
+            <section>
+                <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+                <p>
+                    Dustin Rose<br />
+                    Lindenplan 26<br />
+                    39120 Magdeburg
+                </p>
+            </section>
+
+            <hr />
+
+            <section>
+                <h2>Haftungsausschluss</h2>
+                <p>
+                    Die Inhalte dieser Webseite werden mit größtmöglicher Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr übernommen werden. Als Diensteanbieter bin ich gemäß § 7 Abs. 1 DDG für eigene Inhalte auf dieser Webseite nach den allgemeinen Gesetzen verantwortlich.
+                </p>
+                <p>
+                    Nach §§ 8 bis 10 DDG bin ich als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.
+                </p>
+            </section>
+
+            <section>
+                <h2>Urheberrecht</h2>
+                <p>
+                    Die auf dieser Webseite veröffentlichten Inhalte unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts bedürfen der vorherigen schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.
+                </p>
+            </section>
+
+            <section>
+                <h2>Keine kommerzielle Nutzung</h2>
+                <p>
+                    Diese Webseite wird ausschließlich privat und im Rahmen eines Hobbys betrieben. Es werden keine kommerziellen Zwecke verfolgt, und es wird kein Geld mit dieser Seite verdient. Sie dient lediglich der Vermittlung zwischen privaten Sportlern.
+                </p>
+            </section>
+
+            <section>
+                <h2>Hinweis zur Streitbeilegung</h2>
+                <p>
+                    Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: <a href="https://ec.europa.eu/consumers/odr" target="_blank">https://ec.europa.eu/consumers/odr</a>.<br />
+                    Ich bin nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+                </p>
+            </section>
+
+        </div>
+    </main>
+    <Footer />
+</Layout>
+
+<style>
+    .legal-wrapper {
+        padding: 120px 20px 60px;
+        background: var(--bg-body);
+        color: var(--text-muted);
+        line-height: 1.7;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #222;
+        padding: 50px;
+        border-radius: 30px;
+        /* Dein 5px Border für den konsistenten Look */
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+
+    .back-link {
+        display: inline-block;
+        color: var(--cyan);
+        text-decoration: none;
+        margin-bottom: 30px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    .back-link:hover { transform: translateX(-5px); }
+
+    h1 { color: white; font-size: 2.5rem; margin-bottom: 40px; font-weight: 900; }
+    h2 { color: white; font-size: 1.3rem; margin-top: 35px; margin-bottom: 15px; font-weight: 700; border-left: 3px solid var(--cyan); padding-left: 15px; }
+    
+    hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 40px 0; }
+
+    section p { margin-bottom: 15px; font-size: 0.95rem; }
+    
+    strong { color: white; }
+    
+    a { color: var(--cyan); text-decoration: none; transition: 0.3s; }
+    a:hover { filter: brightness(1.2); }
+
+    @media (max-width: 600px) {
+        .container { padding: 30px 20px; }
+        h1 { font-size: 2rem; }
+    }
+</style>

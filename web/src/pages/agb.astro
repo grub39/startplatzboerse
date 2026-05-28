@@ -1,0 +1,170 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="AGB ">
+    <main class="legal-wrapper">
+        <div class="container">
+            <a href="/" class="back-link">← Zurück zur Startseite</a>
+
+            <h1>Allgemeine Geschäftsbedingungen (AGB)</h1>
+
+            <section>
+                <h2>1. Geltungsbereich</h2>
+                <p>
+                    Diese Allgemeinen Geschäftsbedingungen gelten für die Nutzung der
+                    Plattform <strong>startplatzboerse.com</strong>.
+                </p>
+                <p>
+                    Die Plattform dient ausschließlich der Bereitstellung einer technischen
+                    Möglichkeit für Privatpersonen, Startplätze für Sportveranstaltungen
+                    anzubieten oder anzufragen.
+                </p>
+            </section>
+
+            <section>
+                <h2>2. Leistungen der Plattform</h2>
+                <p>
+                    Der Betreiber stellt lediglich die technische Infrastruktur zur Verfügung,
+                    um Inserate zu veröffentlichen und die Kontaktaufnahme zwischen Nutzern zu
+                    ermöglichen.
+                </p>
+                <p>
+                    Der Betreiber wird <strong>nicht Vertragspartner</strong> der zwischen den
+                    Nutzern geschlossenen Verträge. Ein Vertrag über den Verkauf oder die
+                    Übertragung eines Startplatzes kommt ausschließlich zwischen dem Anbieter
+                    und dem Interessenten zustande.
+                </p>
+            </section>
+
+            <section>
+                <h2>3. Verantwortlichkeit der Nutzer</h2>
+                <p>
+                    <strong>Berechtigung:</strong> Nutzer sind selbst dafür verantwortlich,
+                    dass sie berechtigt sind, den angebotenen Startplatz weiterzugeben, und
+                    dass eine Übertragung nach den Bedingungen des jeweiligen Veranstalters
+                    zulässig ist.
+                </p>
+                <p>
+                    <strong>Umschreibungsgebühren:</strong> Etwaige Kosten für eine offizielle
+                    Umregistrierung beim Veranstalter sind ausschließlich zwischen Anbieter
+                    und Interessent zu klären.
+                </p>
+                <p>
+                    <strong>Richtigkeit:</strong> Nutzer sind für die Richtigkeit und
+                    Vollständigkeit ihrer Angaben (z. B. Preis, Event-Details, Kontaktdaten)
+                    selbst verantwortlich.
+                </p>
+            </section>
+
+            <section>
+                <h2>4. Haftung</h2>
+                <p>
+                    Der Betreiber haftet nicht für die Durchführung von Sportveranstaltungen
+                    sowie nicht für die Wirksamkeit oder erfolgreiche Abwicklung einer
+                    Startplatzübertragung zwischen Nutzern.
+                </p>
+                <p>
+                    Für Schäden haftet der Betreiber nur bei Vorsatz und grober Fahrlässigkeit.
+                    Bei einfacher Fahrlässigkeit haftet der Betreiber nur bei Verletzung
+                    wesentlicher Vertragspflichten und beschränkt auf den vorhersehbaren,
+                    typischerweise eintretenden Schaden.
+                </p>
+                <p>
+                    Die Haftung für Schäden aus der Verletzung des Lebens, des Körpers oder der
+                    Gesundheit bleibt unberührt.
+                </p>
+                <p>
+                    Eine Haftung für die ständige Verfügbarkeit der Plattform besteht nicht.
+                </p>
+            </section>
+
+            <section>
+                <h2>5. Verbotene Inhalte & Missbrauch</h2>
+                <p>
+                    Es ist untersagt, Inhalte einzustellen, die gegen geltendes Recht, gegen
+                    die Teilnahmebedingungen des jeweiligen Veranstalters oder gegen die
+                    Fair-Play-Grundsätze der Plattform verstoßen.
+                </p>
+                <p>
+                    Der Betreiber behält sich vor, Inserate bei berechtigtem Verdacht auf
+                    Missbrauch, Betrug oder Regelverstöße nach eigenem Ermessen zu sperren oder
+                    zu entfernen.
+                </p>
+            </section>
+
+            <section>
+                <h2>6. Datenschutz</h2>
+                <p>
+                    Die Verarbeitung personenbezogener Daten erfolgt ausschließlich im Rahmen
+                    der geltenden Datenschutzbestimmungen.
+                </p>
+                <p>
+                    Weitere Informationen findest du in unserer
+                    <a class="legal-link" href="/datenschutz">
+                        <strong>Datenschutzerklärung</strong>
+                    </a>.
+                </p>
+            </section>
+        </div>
+    </main>
+
+    <Footer />
+</Layout>
+
+<style>
+    .legal-wrapper {
+        padding: 120px 20px 60px;
+        background: var(--bg-body);
+        color: var(--text-muted);
+        line-height: 1.7;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #222;
+        padding: 50px;
+        border-radius: 30px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+
+    .back-link {
+        display: inline-block;
+        color: var(--cyan);
+        text-decoration: none;
+        margin-bottom: 30px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    .back-link:hover { transform: translateX(-5px); }
+
+    h1 { color: white; font-size: 2.5rem; margin-bottom: 40px; font-weight: 900; }
+    h2 {
+        color: white;
+        font-size: 1.3rem;
+        margin-top: 35px;
+        margin-bottom: 15px;
+        font-weight: 700;
+        border-left: 3px solid var(--cyan);
+        padding-left: 15px;
+    }
+
+    section p { margin-bottom: 15px; font-size: 0.95rem; }
+
+    strong { color: white; }
+
+    a { color: var(--cyan); text-decoration: none; transition: 0.3s; }
+    a:hover { filter: brightness(1.2); }
+
+    .legal-link strong {
+        color: var(--cyan);
+    }
+
+    @media (max-width: 600px) {
+        .container { padding: 30px 20px; }
+        h1 { font-size: 2rem; }
+    }
+</style>

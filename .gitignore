@@ -1,25 +1,48 @@
-# build output
-dist/
-# generated types
+# Learn more: https://docs.github.com/en/get-started/git-basics/ignoring-files
+
+# --- Dependencies ---
+**/node_modules/
+
+# --- Web (Astro) ---
 .astro/
+dist/
+web/dist/
+web/.astro/
+startplatzboerse/
 
-# dependencies
-node_modules/
+# --- App (Expo) ---
+app/dist/
+app/.expo/
+app/web-build/
+app/expo-env.d.ts
+app/.metro-health-check*
 
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# --- Environment & secrets ---
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.jks
+**/*.p8
+**/*.p12
+**/*.key
+**/*.mobileprovision
+**/*firebase-adminsdk*.json
 
+# --- Build & tooling ---
+**/*.tsbuildinfo
+**/.kotlin/
+**/*.log
+**/npm-debug.*
+**/yarn-debug.*
+**/yarn-error.*
 
-# environment variables
-.env
-.env.production
-
-# macOS-specific files
+# --- OS ---
 .DS_Store
+Thumbs.db
 
-# jetbrains setting folder
-.idea/
-.vercel
+# --- Editors / deploy / local AI ---
+**/.idea/
+**/.cursor/
+**/.claude/
+**/.vercel/

@@ -1,0 +1,133 @@
+---
+// src/components/RegistrationFlow.astro
+const { initialEmail = "" } = Astro.props;
+---
+
+<div class="registration-container" id="reg-flow">
+    <div id="step-1" class="step">
+        <h3>Erstelle dein Profil</h3>
+        <p class="subline">Damit Käufer wissen, wer du bist.</p>
+        
+        <form id="details-form">
+            <div class="input-row">
+                <input type="text" id="vorname" placeholder="Vorname" required />
+                <input type="text" id="nachname" placeholder="Nachname" required />
+            </div>
+            <input type="text" id="nickname" placeholder="Nickname (wird öffentlich angezeigt)" required />
+            <input type="email" id="reg-email" value={initialEmail} placeholder="E-Mail Adresse" required />
+            
+            <button type="submit" class="btn-primary">Code anfordern</button>
+        </form>
+    </div>
+
+    <div id="step-2" class="step hidden">
+        <h3>Prüfe dein Postfach</h3>
+        <p>Wir haben einen Code an <strong id="display-email"></strong> gesendet.</p>
+        
+        <input type="text" id="otp-code" placeholder="6-stelliger Code" maxlength="6" />
+        <button id="verify-btn" class="btn-primary">Profil bestätigen & Einloggen</button>
+        <button id="back-btn" class="btn-link">Zurück</button>
+    </div>
+</div>
+
+<script>
+    import { createClient } from '@supabase/supabase-js';
+
+    const supabase = createClient(
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const detailsForm = document.getElementById('details-form');
+    const emailInput = document.getElementById('reg-email');
+
+    // 1. ROUTE GUARD & INITIALISIERUNG
+    async function initOnboarding() {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        // Wenn kein Nutzer eingeloggt ist -> zurück zum Login
+        if (!session || error) {
+            window.location.href = '/login';
+            return;
+        }
+
+        // Wenn das Onboarding bereits abgeschlossen ist -> direkt zum Dashboard
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('has_completed_onboarding')
+            .eq('id', session.user.id)
+            .single();
+
+        if (profile?.has_completed_onboarding) {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        // E-Mail aus der Session im Formular vorbelegen
+        if (emailInput) {
+            emailInput.value = session.user.email;
+            emailInput.disabled = true; // Verhindert, dass die Mail hier geändert wird
+        }
+    }
+
+    // Initialisierung ausführen
+    initOnboarding();
+
+    // 2. PROFIL SPEICHERN (Ohne erneutes OTP)
+    if (detailsForm) {
+        detailsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Button-Status ändern
+            const submitBtn = detailsForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "Speichere...";
+            submitBtn.disabled = true;
+
+            const { data: { session } } = await supabase.auth.getSession();
+
+            const profileData = {
+                id: session.user.id, // Ganz wichtig für die Zuordnung
+                nickname: document.getElementById('nickname').value,
+                // Stelle sicher, dass diese Spalten in deiner Tabelle existieren:
+                vorname: document.getElementById('vorname').value,
+                nachname: document.getElementById('nachname').value,
+                // Hier setzen wir den Status auf abgeschlossen:
+                has_completed_onboarding: true,
+                updated_at: new Date()
+            };
+
+            // Upsert: Aktualisiert den Datensatz oder erstellt ihn, falls nicht vorhanden
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert(profileData);
+
+            if (profileError) {
+                alert("Fehler beim Speichern: " + profileError.message);
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            } else {
+                // Erfolg! Jetzt zum Dashboard
+                window.location.href = '/dashboard?msg=welcome';
+            }
+        });
+    }
+</script>
+
+<style>
+    .hidden { display: none; }
+    .registration-container {
+        background: var(--bg-card);
+        padding: 40px;
+        border-radius: 24px;
+        border: 1px solid rgba(255,255,255,0.05);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    input { 
+        width: 100%; padding: 15px; background: #222; border: 1px solid #444; 
+        color: white; border-radius: 12px; margin-bottom: 15px;
+    }
+    .btn-link { background: none; border: none; color: #888; cursor: pointer; margin-top: 10px; }
+</style>

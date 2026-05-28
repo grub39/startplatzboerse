@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Startplatzbörse",
+    "slug": "startplatzboerse",
+    "privacy": "hidden",
+    "version": "1.0.0",
+    "runtimeVersion": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#323232"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#323232"
+      },
+      "package": "com.startplatzboerse.app",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6b41215d-8a51-4302-abd7-3456b8783ede"
+      }
+    },
+    "owner": "r3webdesign",
+    "updates": {
+      "url": "https://u.expo.dev/6b41215d-8a51-4302-abd7-3456b8783ede"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-notifications",
+      [
+        "expo-navigation-bar",
+        {
+          "backgroundColor": "#191919",
+          "barStyle": "light",
+          "borderColor": "#191919",
+          "visibility": "visible",
+          "position": "relative"
+        }
+      ]
+    ]
+  }
+}

@@ -1,0 +1,145 @@
+---
+// src/components/Infos.astro
+---
+
+<section id="infos" class="section-wrapper">
+    <div class="container">
+        
+        <div class="mission-box">
+    <span class="badge">Ein Herzensprojekt</span>
+    <h2>Von Sportler zu Sportler.</h2>
+    
+    <div class="mission-text">
+        <p>
+            Hi, ich bin Dustin. Ich entwickle startplatzboerse.com gerade als kleines, privates Ein-Mann-Projekt, direkt aus der Community heraus.
+        </p>
+            <h3>Die Idee</h3><br>
+        <p>
+            Es nervt, wenn teure Startplätze verfallen, nur weil jemand krank oder verletzt ist. Gleichzeitig suchen andere auf zuvielen Plattformen, in Facebook-Gruppen oder Chats nach genau 
+            diesen Startplätzen – unübersichtlich und zu zeitaufwändig.
+        </p>
+            <h3>Mein Ziel:</h3>
+        <p>
+            Leere Startblöcke füllen und euch an die Startlinie bringen. Fair, transparent und direkt.
+        </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 35px;">
+        <a href="/ueber-uns" class="btn-mission-more" style="display: inline-block; padding: 14px 28px; border: 2px solid #00bcd4; color: #00bcd4; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 1rem; transition: all 0.3s ease;">
+            Mehr über das Projekt
+        </a>
+    </div>
+</div>
+</section>
+
+<style>
+    /* --- VARIABLEN --- */
+    :root {
+        --h2-clamp: clamp(1.8rem, 8vw, 3rem);
+        --p-clamp: clamp(0.95rem, 2.5vw, 1.15rem);
+        --box-padding: clamp(25px, 6vw, 60px);
+        --bg-card-dark: var(--bg-card);
+    }
+
+    .section-wrapper { 
+        padding: clamp(60px, 10vw, 120px) 20px; 
+        background: #323232;
+        position: relative;
+    }
+
+    .container { 
+        max-width: 1000px; 
+        margin: 0 auto; 
+    }
+
+    /* --- MISSION BOX (Die große Box oben) --- */
+    .mission-box {
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto clamp(40px, 8vw, 80px);
+        background: var(--bg-card-dark);
+        padding: var(--box-padding);
+        border-radius: 30px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .badge { 
+        background: rgba(0, 188, 212, 0.1);
+        color: var(--cyan); 
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 800; 
+        text-transform: uppercase; 
+        letter-spacing: 1.5px; 
+        font-size: 0.7rem; 
+        display: inline-block; 
+        margin-bottom: 20px; 
+    }
+
+    h2 { 
+        font-size: var(--h2-clamp); 
+        font-weight: 900;
+        color: white; 
+        margin-bottom: 25px; 
+        line-height: 1.05;
+        letter-spacing: -1px;
+    }
+
+    .mission-text p {
+        color: #aaa; /* Etwas helleres Grau für bessere Lesbarkeit auf Schwarz */
+        font-size: var(--p-clamp);
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+
+    .mission-text strong {
+        color: white;
+        font-weight: 700;
+    }
+
+    /* --- GRID & CARDS (Die kleineren Karten darunter) --- */
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .card {
+        /* HIER GEÄNDERT: Feste dunkle Farbe */
+        background: var(--bg-card-dark);
+        padding: clamp(30px, 5vw, 45px) clamp(20px, 4vw, 35px);
+        border-radius: 24px;
+        border: 1px solid rgba(255,255,255,0.05);
+        transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        text-align: left;
+    }
+    
+    .card:hover { 
+        transform: translateY(-8px); 
+        border-color: rgba(0, 188, 212, 0.3); 
+        background: var(--bg-card);
+    }
+
+    .icon-box {
+        width: 44px; height: 44px;
+        background: rgba(0, 188, 212, 0.1);
+        color: var(--cyan);
+        font-weight: 900; font-size: 1.1rem;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 20px;
+        border: 1px solid rgba(0, 188, 212, 0.2);
+    }
+
+    h3 { color: white; margin-bottom: 12px; font-size: 1.35rem; font-weight: 800; }
+    .card p { font-size: 0.95rem; color: #888; line-height: 1.6; }
+
+    /* Desktop Ansicht */
+    @media (min-width: 850px) {
+        .grid { grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    }
+    .btn-mission-more:hover {
+    background-color: rgba(0, 188, 212, 0.1);
+    color: #ffffff !important;
+}
+</style>

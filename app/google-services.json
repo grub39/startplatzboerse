@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1047050776691",
+    "project_id": "startplatzboerse-19425",
+    "storage_bucket": "startplatzboerse-19425.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047050776691:android:35c8f5df7d913b893dba06",
+        "android_client_info": {
+          "package_name": "com.startplatzboerse.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaXBZT_QrU94Hyz49Z0BNGsUgrvStT1TE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

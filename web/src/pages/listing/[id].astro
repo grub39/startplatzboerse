@@ -1,0 +1,501 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Footer from '../../components/Footer.astro'; 
+import { createClient } from '@supabase/supabase-js';
+import { formatRunMetaDetail } from '../../lib/runListingBuild';
+
+const { id } = Astro.params;
+const { searchParams } = Astro.url;
+const origin = searchParams.get('from'); 
+
+const supabase = createClient(
+  import.meta.env.PUBLIC_SUPABASE_URL,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+);
+
+const { data: item, error } = await supabase
+  .from('listings')
+  .select('*')
+  .eq('id', id)
+  .maybeSingle();
+
+if (error) {
+  console.error("Supabase Error:", error.message);
+}
+
+// Verkäufer-Profil laden
+const sellerId = item?.user_id;
+const { data: seller } = sellerId ? await supabase
+  .from('profiles')
+  .select('nickname, updated_at, avatar_url')
+  .eq('id', sellerId)
+  .single() : { data: null };
+
+const memberSince = seller?.updated_at
+  ? new Date(seller.updated_at).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+  : null;
+
+const backLabel = origin === 'search' ? "← Zurück zur Suche" : "← Zurück zur Übersicht";
+
+const pageTitle = item ? item.event_name : "Inserat nicht gefunden";
+const distanceLabel = item ? (
+  item.distance === 'Freie Distanz' ? (
+    item.category === 'Triathlon' && (item.swim_dist || item.bike_dist || item.run_dist) ?
+      `Freie Distanz – Schwimmen ${item.swim_dist ?? '?'} km · Rad ${item.bike_dist ?? '?'} km · Laufen ${item.run_dist ?? '?'} km` :
+      item.distance_km ? `Freie Distanz (${item.distance_km} km)` :
+      'Freie Distanz'
+  ) : item.distance || 'K.A.'
+) : 'K.A.';
+const runProfileDetail = item ? formatRunMetaDetail({
+  listing_meta: item.listing_meta,
+  distance_km: item.distance_km,
+  elevation_gain_m: item.elevation_gain_m,
+  elevation_loss_m: item.elevation_loss_m,
+}) : null;
+const seoDescription = item 
+  ? `Sichere dir jetzt einen Startplatz für ${item.event_name} am ${new Date(item.event_date).toLocaleDateString('de-DE')} in ${item.location}. Preis: ${item.price}€. Sicherer Kauf via Startplatzbörse.`
+  : "Details zum Startplatz auf der Startplatzbörse.";
+---
+
+<Layout
+  title={pageTitle}
+  description={seoDescription}
+  image="/og-default.png"
+  canonicalURL={`https://startplatzboerse.com/listing/${id}`}
+  ogType="article"
+>
+    <main class="listing-page">
+        <div class="container">
+            <a href="/#listings" class="back-link button-style" id="dynamic-back-btn">
+                {backLabel}
+            </a>
+
+            {!item ? (
+                <div class="error-box card">
+                    <h2>Inserat nicht gefunden</h2>
+                    <p>Das Inserat existiert nicht oder wurde gelöscht.</p>
+                    <a href="/" class="btn-cyan-glow" style="display:inline-block; margin-top:20px;">Startseite</a>
+                </div>
+            ) : (
+                <div class="listing-layout">
+                    
+                    <div class="content-side">
+                        <div class="header-actions">
+                            <span class="badge">{item.category}</span>
+                            <div class="header-actions-right">
+                                <button
+                                    type="button"
+                                    class="heart-btn"
+                                    data-watchlist-id={item.id}
+                                    aria-label="Merken"
+                                    aria-pressed="false"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="heart-icon" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                                    </svg>
+                                </button>
+                                <button id="share-btn" class="share-btn" aria-label="Inserat teilen">
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                Teilen
+                            </button>
+                            </div>
+                        </div>
+
+                        <h1 class="glow-title">{item.event_name}</h1>
+                        
+                        <div class="price-section mobile-only">
+                             <span class="main-price">{item.price}€</span>
+                             {item.old_price && <span class="old-price">{item.old_price}€</span>}
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">Datum</span>
+                                <span class="val">{new Date(item.event_date).toLocaleDateString('de-DE')}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Ort</span>
+                                <span class="val">{item.location} {item.plz ? `(${item.plz})` : ''}</span>
+                            </div>
+                            {item.event_url && (
+                                <div class="info-item">
+                                    <span class="label">Website</span>
+                                    <span class="val"><a href={item.event_url} target="_blank" rel="noopener noreferrer">{item.event_url}</a></span>
+                                </div>
+                            )}
+                            <div class="info-item">
+                                <span class="label">Distanz</span>
+                                <span class="val">{distanceLabel}</span>
+                            </div>
+                            {runProfileDetail && (
+                                <div class="info-item info-item-full">
+                                    <span class="label">Streckenprofil</span>
+                                    <span class="val val-multiline">{runProfileDetail}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div class="price-section desktop-only">
+                            <div class="price-display">
+                                {item.old_price && <span class="old-price">{item.old_price}€</span>}
+                                <span class="main-price">{item.price}€</span>
+                            </div>
+                        </div>
+
+                        <div class="description-box">
+                            <span class="label">Zusatzinfos</span>
+                            <p>{item.description || 'Keine weiteren Details vom Verkäufer hinterlegt.'}</p>
+                        </div>
+                    </div>
+
+                    <aside class="sidebar">
+
+                        {seller && (
+                            <div class="card seller-card-block">
+                                <div class="seller-avatar-wrap">
+                                    {seller.avatar_url
+                                        ? <img src={seller.avatar_url} alt={seller.nickname ?? 'Verkäufer'} />
+                                        : <span>👤</span>
+                                    }
+                                </div>
+                                <div class="seller-info">
+                                    <p class="seller-name">{seller.nickname || 'Anonym'}</p>
+                                    {memberSince && <p class="seller-meta">Mitglied seit {memberSince}</p>}
+                                </div>
+                            </div>
+                        )}
+
+                        <div class="card contact-card">
+                            <h3>Verkäufer kontaktieren</h3>
+                            <p>Sende eine Nachricht, um Details oder die Übergabe zu klären.</p>
+                            
+                            <form id="contact-form">
+                                <input type="hidden" name="listing_id" value={item.id}>
+                                <input type="hidden" name="seller_id" value={item.user_id}>
+                                
+                                <textarea name="message" placeholder="Hallo, ich habe Interesse an deinem Startplatz..." class="input-field textarea" required></textarea>
+                                
+                                <button type="submit" class="btn-cyan-glow" id="send-btn">Nachricht senden</button>
+                            </form>
+                            <p class="login-hint">🔒 Sicherer Chat via Startplatzbörse</p>
+                        </div>
+                    </aside>
+                </div>
+            )}
+        </div>
+    </main>
+    
+    <Footer /> 
+</Layout>
+
+<script>
+    import { createClient } from '@supabase/supabase-js';
+    import { initWatchlistUi } from '../../lib/watchlist';
+
+    initWatchlistUi();
+
+    // TEILEN LOGIK (Native Web Share API)
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', async () => {
+            const shareData = {
+                title: document.title,
+                text: 'Schau dir diesen Startplatz an:',
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                } catch (err) {
+                    console.log('Teilen abgebrochen oder fehlgeschlagen', err);
+                }
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                const originalHTML = shareBtn.innerHTML;
+                shareBtn.innerHTML = '✓ Link kopiert';
+                setTimeout(() => { shareBtn.innerHTML = originalHTML; }, 2000);
+            }
+        });
+    }
+
+    // BACK-LOGIK
+    const backBtn = document.getElementById('dynamic-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            const urlParams = new URLSearchParams(window.location.search);
+            const origin = urlParams.get('from');
+
+            if (origin === 'search') {
+                if (window.history.length > 1) {
+                    window.history.back(); 
+                } else {
+                    window.location.href = '/suche';
+                }
+            } else {
+                window.location.href = '/';
+            }
+        });
+    }
+
+    const supabase = createClient(
+        import.meta.env.PUBLIC_SUPABASE_URL, 
+        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const form = document.getElementById('contact-form');
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedDraft = localStorage.getItem('draft_msg');
+        const textArea = document.querySelector('textarea[name="message"]');
+        if (savedDraft && textArea && (textArea as HTMLTextAreaElement).value === "") {
+            (textArea as HTMLTextAreaElement).value = savedDraft;
+        }
+    });
+
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('send-btn') as HTMLButtonElement;
+            const originalText = btn.innerText;
+            btn.innerText = "Prüfe...";
+            btn.disabled = true;
+
+            const formData = new FormData(form as HTMLFormElement);
+            const messageText = formData.get('message');
+            const listingId = formData.get('listing_id');
+            const sellerId = formData.get('seller_id');
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (!user) {
+                    localStorage.setItem('draft_msg', messageText as string);
+                    window.location.href = `/login?redirect=/listing/${listingId}`;
+                    return; 
+                }
+
+                if (user.id === sellerId) {
+                    alert("Du kannst dir nicht selbst schreiben.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+
+                const { data: existing } = await supabase
+                    .from('conversations')
+                    .select('id')
+                    .eq('listing_id', listingId)
+                    .eq('buyer_id', user.id)
+                    .single();
+
+                let chatId = existing?.id;
+
+                if (!chatId) {
+                    const { data: nc, error: ne } = await supabase
+                        .from('conversations')
+                        .insert({ listing_id: listingId, buyer_id: user.id, seller_id: sellerId })
+                        .select().single();
+                    if (ne) throw ne;
+                    chatId = nc.id;
+                }
+
+                const { error: me } = await supabase.from('messages').insert({
+                    conversation_id: chatId,
+                    sender_id: user.id,
+                    content: messageText
+                });
+
+                if (me) throw me;
+                localStorage.removeItem('draft_msg');
+                window.location.href = `/dashboard?chat_id=${chatId}`;
+
+            } catch (err) {
+                console.error(err);
+                alert("Fehler beim Senden.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }); 
+    }
+</script>
+
+<style>
+    .header-actions { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 5px;
+    }
+
+    .header-actions-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .heart-btn {
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-sm);
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        padding: 0;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .heart-icon { width: 18px; height: 18px; }
+    .heart-btn:hover { color: #e53935; border-color: #e53935; }
+    .heart-btn.is-saved { color: #e53935; border-color: #e53935; }
+    .heart-btn.is-saved .heart-icon { fill: currentColor; }
+    .heart-btn:disabled { opacity: 0.5; cursor: wait; }
+
+    .share-btn { 
+        background: var(--bg-card); 
+        border: 1px solid rgba(255, 255, 255, 0.1); 
+        color: #cbd5e1; 
+        padding: 8px 12px; 
+        border-radius: var(--radius-sm); 
+        font-size: 0.75rem; 
+        font-weight: 800;
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
+        gap: 6px; 
+        transition: all 0.2s ease; 
+    }
+    .share-btn:hover { 
+        color: var(--cyan); 
+        border-color: rgba(0, 188, 212, 0.45); 
+        background: rgba(0, 188, 212, 0.12);
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    .listing-page { background: var(--bg-body); min-height: 100vh; padding: 100px 15px 60px; color: white; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .listing-layout { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; }
+    
+    @media (min-width: 992px) {
+        .listing-layout { grid-template-columns: 1fr 380px; gap: 60px; }
+        .listing-page { padding: 160px 20px 80px; }
+    }
+
+    .glow-title { font-size: 2.2rem; font-weight: 900; margin: 10px 0; line-height: 1.1; }
+    @media (min-width: 768px) { .glow-title { font-size: 3.5rem; } }
+
+    .badge { color: var(--cyan); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.7rem; }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        margin: 16px 0;
+        padding: 16px;
+        background: var(--bg-card);
+        border-radius: var(--radius-card);
+    }
+    @media (min-width: 768px) { .info-grid { display: flex; flex-wrap: wrap; gap: 24px 40px; } }
+
+    .label { color: #888; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;}
+    .val { font-size: 1rem; font-weight: 700; }
+    .info-item-full { width: 100%; }
+    .val-multiline { white-space: pre-line; font-size: 0.95rem; line-height: 1.45; color: #ccc; }
+
+    .price-section { margin: 15px 0; display: flex; align-items: baseline; gap: 15px; }
+    .main-price { font-size: 2.5rem; font-weight: 900; color: var(--cyan); }
+    .old-price { font-size: 1.2rem; color: #333; text-decoration: line-through; }
+
+    .mobile-only { display: flex; }
+    .desktop-only { display: none; }
+    @media (min-width: 992px) { .mobile-only { display: none; } .desktop-only { display: flex; } .main-price { font-size: 3.5rem; } }
+
+    .description-box {
+        margin: 0 0 16px;
+        padding: 16px;
+        background: var(--bg-card);
+        border-radius: var(--radius-card);
+        line-height: 1.6;
+        color: #bbb;
+    }
+    .description-box p { margin: 8px 0 0; font-size: 0.95rem; line-height: 1.55; }
+
+    .sidebar { display: flex; flex-direction: column; gap: 12px; }
+
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        padding: 16px;
+    }
+    .contact-card h3 { margin-bottom: 8px; font-weight: 800; font-size: 1.2rem; }
+    .contact-card p { color: #666; font-size: 0.85rem; margin-bottom: 20px; }
+    .login-hint { font-size: 0.7rem; text-align: center; margin-top: 15px; color: #333; font-weight: 600; }
+
+    /* Verkäufer-Block */
+    .seller-card-block {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .seller-avatar-wrap {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        flex-shrink: 0;
+        overflow: hidden;
+        background: linear-gradient(135deg, var(--cyan), rgba(0, 188, 212, 0.3));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        border: 2px solid rgba(255, 255, 255, 0.08);
+    }
+    .seller-avatar-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .seller-info { flex: 1; }
+    .seller-name {
+        font-size: 1rem;
+        font-weight: 900;
+        color: white;
+        margin: 0 0 3px;
+    }
+    .seller-meta {
+        font-size: 0.7rem;
+        color: #555;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .input-field {
+        width: 100%;
+        background: var(--bg-body);
+        border: 2px solid rgba(255, 255, 255, 0.08);
+        padding: 14px;
+        border-radius: var(--radius-sm);
+        color: white;
+        margin-bottom: 12px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    .textarea { height: 110px; resize: none; }
+    
+    .btn-cyan-glow { width: 100%; background: var(--cyan); color: black; border: none; padding: 16px; border-radius: 14px; font-weight: 900; cursor: pointer; transition: 0.3s; font-size: 1rem; }
+    .btn-cyan-glow:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 188, 212, 0.2); }
+
+    .back-link { background: transparent; border: none; color: #00bcd4; text-decoration: none; font-weight: 700; font-size: 0.8rem; margin-bottom: 15px; display: inline-block; cursor: pointer; padding: 0; transition: color 0.3s ease; }
+    .back-link:hover { color: white; }
+</style>

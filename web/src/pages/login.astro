@@ -1,0 +1,356 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Footer from '../components/Footer.astro';
+import FeedbackBanner from '../components/FeedbackBanner.astro';
+---
+
+<Layout title="Anmelden - Startplatzbörse">
+    <main class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="badge" id="top-badge">Sicherer Zugang</span>
+                <h1 id="main-title">Willkommen zurück</h1>
+                <p id="status-text">Gib deine E-Mail ein, um dich anzumelden oder ein Konto zu erstellen.</p>
+            </div>
+
+            <div id="step-email">
+                <div class="input-group">
+                    <label>E-Mail Adresse</label>
+                    <input type="email" id="email" placeholder="name@beispiel.de" required maxlength="50" />
+                </div>
+                <button id="btn-send-code" class="btn-primary">Code anfordern</button>
+            </div>
+
+            <div id="step-code" style="display: none;">
+                <div class="input-group">
+                    <label>6-stelliger Code</label>
+                    <input type="text" id="otp-code" placeholder="123456" maxlength="6" autocomplete="one-time-code" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                </div>
+                <button id="btn-verify" class="btn-primary">Anmelden & Weiter</button>
+                <button id="btn-back" class="btn-link">Andere E-Mail nutzen</button>
+            </div>
+
+           <div id="step-register" style="display: none;">
+    <div class="input-group">
+        <label>Vorname</label>
+        <input type="text" id="vorname" placeholder="Dein Vorname" maxlength="30" />
+    </div>
+    <div class="input-group">
+        <label>Nachname</label>
+        <input type="text" id="nachname" placeholder="Dein Nachname" maxlength="30" />
+    </div>
+    <div class="input-group">
+        <label>Nickname</label>
+        <input type="text" id="nickname" placeholder="3-20 Zeichen" maxlength="20" />
+    </div>
+
+    <div class="checkbox-group">
+    <input type="checkbox" id="agb-consent" />
+    <label for="agb-consent" class="agb-label">
+        Ich stimme den <a href="/agb" class="agb-link" target="_blank">AGB</a> zu.
+    </label>
+</div>  
+
+    <button id="btn-complete-profile" class="btn-primary">Profil speichern & Starten</button>
+</div>
+            
+            <FeedbackBanner id="error-msg" />
+        </div>
+    </main>
+    <Footer />
+</Layout>
+
+<script>
+    // --- IMPORT & INITIALISIERUNG ---
+    import { createClient } from '@supabase/supabase-js';
+    import { hideFeedback, showFeedbackError } from '../lib/feedback-banner';
+
+    // Supabase-Client starten
+    const supabase = createClient(
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    // --- DOM-ELEMENTE HOLEN ---
+    const emailInput = document.getElementById('email');
+    const otpInput = document.getElementById('otp-code');
+    const statusText = document.getElementById('status-text');
+    const mainTitle = document.getElementById('main-title');
+    
+    // Die verschiedenen Container für die Schritte (Email, Code, Profil)
+    const stepEmail = document.getElementById('step-email');
+    const stepCode = document.getElementById('step-code');
+    const stepRegister = document.getElementById('step-register');
+    const errorDisplay = document.getElementById('error-msg');
+
+    function showError(message: string) {
+        showFeedbackError(errorDisplay, message);
+    }
+
+    function hideError() {
+        hideFeedback(errorDisplay);
+    }
+
+    // --- SCHRITT 1: LOGIN-CODE ANFORDERN ---
+    document.getElementById('btn-send-code')?.addEventListener('click', async (e) => {
+        hideError(); // Alte Fehler ausblenden
+        
+        const email = emailInput.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // Validierung der E-Mail
+        if (!email) return showError("Bitte E-Mail Adresse eingeben.");
+        if (!emailRegex.test(email)) return showError("Das ist keine gültige E-Mail Adresse.");
+
+        // Button deaktivieren, um Mehrfachklicks zu verhindern
+        const btn = e.target;
+        btn.innerText = "Sende...";
+        btn.disabled = true;
+
+        // Anfrage an Supabase senden
+        const { error } = await supabase.auth.signInWithOtp({ email });
+
+        if (error) {
+            showError("Fehler: " + error.message);
+            btn.innerText = "Code anfordern"; // Reset Button
+            btn.disabled = false;
+        } else {
+            // UI umschalten: Email-Feld weg, Code-Feld her
+            if(stepEmail) stepEmail.style.display = 'none';
+            if(stepCode) stepCode.style.display = 'block';
+            if(statusText) statusText.innerText = `Code gesendet an: ${email}`;
+            otpInput.focus();
+        }
+    });
+
+    // --- SCHRITT 2: OTP-CODE VERIFIZIEREN ---
+    document.getElementById('btn-verify')?.addEventListener('click', async (e) => {
+        hideError();
+        const email = emailInput.value.trim();
+        const token = otpInput.value.trim();
+
+        if (token.length < 6) return showError("Der Code muss 6-stellig sein.");
+
+        const btn = e.target;
+        btn.innerText = "Prüfe...";
+        btn.disabled = true;
+
+        // Versuch 1: Login als bestehender User ('email')
+        let { data: authData, error: authError } = await supabase.auth.verifyOtp({
+            email, token, type: 'email'
+        });
+
+        // Versuch 2: Falls Login fehlschlägt, ist es vielleicht eine Neuanmeldung ('signup')
+        if (authError) {
+            const signupRes = await supabase.auth.verifyOtp({
+                email, token, type: 'signup'
+            });
+            authData = signupRes.data;
+            authError = signupRes.error;
+        }
+
+        // Ergebnis prüfen
+        if (authError || !authData.user) {
+            showError("Code ungültig oder abgelaufen.");
+            btn.innerText = "Anmelden & Weiter";
+            btn.disabled = false;
+        } else {
+            // Prüfen, ob der User schon ein Profil hat
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('has_completed_onboarding')
+                .eq('id', authData.user.id)
+                .single();
+
+            if (profile?.has_completed_onboarding) {
+                // User existiert schon -> Weiterleitung zum Dashboard
+                const urlParams = new URLSearchParams(window.location.search);
+                window.location.href = urlParams.get('redirect') || "/dashboard";
+            } else {
+                // Neuer User -> UI umschalten zum Profil-Erstellen
+                if(stepCode) stepCode.style.display = 'none';
+                if(stepRegister) stepRegister.style.display = 'block';
+                if(mainTitle) mainTitle.innerText = "Willkommen!";
+                if(statusText) statusText.innerText = "Erstelle kurz dein Profil.";
+            }
+        }
+    });
+
+    // --- SCHRITT 3: PROFIL ERSTELLEN & SPEICHERN ---
+    document.getElementById('btn-complete-profile')?.addEventListener('click', async (e) => {
+        hideError();
+        
+        // Aktuelle Session holen
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return window.location.reload(); // Falls Session weg ist -> Reload
+
+        // Eingabewerte auslesen
+        const nickname = document.getElementById('nickname').value.trim();
+        const first_name = document.getElementById('vorname').value.trim();
+        const last_name = document.getElementById('nachname').value.trim();
+        
+        // +++ NEU: AGB CHECKBOX PRÜFEN +++
+        const agbCheckbox = document.getElementById('agb-consent');
+        
+        if (!agbCheckbox || !agbCheckbox.checked) {
+             return showError("Bitte stimme den AGB zu, um fortzufahren.");
+        }
+        // +++ ENDE NEU +++
+
+        // Regex-Definitionen für Validierung
+        const nicknameRegex = /^[a-zA-Z0-9_]{3,20}$/; 
+        const nameRegex = /^[a-zA-ZÀ-ÿ\s\-]{2,30}$/;
+
+        // Eingaben validieren
+        if (!nameRegex.test(first_name)) return showError("Vorname ungültig (Nur Buchstaben, 2-30 Zeichen).");
+        if (!nameRegex.test(last_name)) return showError("Nachname ungültig (Nur Buchstaben, 2-30 Zeichen).");
+        if (!nicknameRegex.test(nickname)) return showError("Nickname ungültig: 3-20 Zeichen, nur Buchstaben, Zahlen & Unterstrich.");
+
+        const btn = e.target;
+        btn.innerText = "Speichere...";
+        btn.disabled = true;
+
+        // Daten in Supabase 'profiles' Tabelle speichern
+        const { error } = await supabase.from('profiles').upsert({
+            id: session.user.id,
+            nickname,
+            first_name,
+            last_name,
+            registered_email: session.user.email,
+            has_completed_onboarding: true
+        });
+
+        // Fehlerbehandlung beim Speichern
+        if (error) {
+            if (error.code === '23505') { // Postgres Error Code für "Unique Violation"
+                showError("Dieser Nickname ist bereits vergeben.");
+            } else {
+                showError("Fehler: " + error.message);
+            }
+            btn.innerText = "Profil speichern & Starten";
+            btn.disabled = false;
+        } else {
+            // Erfolg -> Weiterleitung
+            window.location.href = "/dashboard";
+        }
+    });
+
+    // --- ZURÜCK-BUTTON ---
+    document.getElementById('btn-back')?.addEventListener('click', () => {
+        hideError();
+        if(stepEmail) stepEmail.style.display = 'block';
+        if(stepCode) stepCode.style.display = 'none';
+        if(statusText) statusText.innerText = "Gib deine E-Mail ein, um dich anzumelden.";
+    });
+</script>
+
+<style>
+    .login-container {
+        min-height: 100vh;
+        background: var(--bg-body);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 120px 20px 60px;
+        color: white;
+        font-family: system-ui, sans-serif;
+    }
+
+    .login-card {
+        background: var(--bg-card);
+        width: 100%;
+        max-width: 400px;
+        padding: 40px;
+        border-radius: var(--radius-card);
+        border: var(--border-card);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .login-header { text-align: center; margin-bottom: 30px; }
+    .badge { color: var(--cyan); font-weight: 900; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; margin-bottom: 10px; display: block; }
+    h1 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; color: white; }
+    p { color: #888; font-size: 0.9rem; line-height: 1.5; }
+
+    .input-group { margin-bottom: 20px; text-align: left; }
+    label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; }
+    input {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        padding: 15px;
+        border-radius: 12px;
+        color: white;
+        font-size: 1.1rem;
+        transition: 0.3s;
+        box-sizing: border-box;
+    }
+    input:focus { border-color: var(--cyan); outline: none; }
+    input#otp-code { text-align: center; font-weight: 700; letter-spacing: 4px; font-size: 1.5rem; }
+
+    .btn-primary {
+        width: 100%;
+        background: var(--cyan);
+        color: black;
+        border: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 1rem;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-link {
+        background: none;
+        border: none;
+        color: #666;
+        margin-top: 20px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        width: 100%;
+        text-decoration: underline;
+    }
+
+    #step-email, #step-code, #step-register { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Container für Checkbox und Text */
+.checkbox-group {
+    display: flex;
+    align-items: center; /* Vertikale Zentrierung */
+    margin-top: 15px;    /* Abstand zum Eingabefeld darüber */
+    margin-bottom: 20px; /* Abstand zum Button darunter */
+}
+
+/* Styling der Checkbox selbst */
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px; /* Abstand zwischen Box und Text */
+    cursor: pointer;
+    /* Färbt die Checkbox in unterstützten Browsern in der Brand-Farbe */
+    accent-color: #00bcd4; 
+}
+
+/* Styling des Labels (der normale Text) */
+.agb-label {
+    color: #e0e0e0; /* Helle Textfarbe für gute Lesbarkeit */
+    font-size: 0.95rem;
+    cursor: pointer; /* Zeiger auch auf dem Text */
+}
+
+/* Styling des AGB-Links */
+.agb-link {
+    color: #00bcd4; /* Deine türkise Brand-Farbe */
+    text-decoration: underline;
+    font-weight: 600; /* Optional: etwas fetter */
+    transition: color 0.2s ease;
+}
+
+/* Hover-Effekt für den Link */
+.agb-link:hover {
+    color: #00acc1; /* Ein etwas dunklerer Türkis-Ton */
+}
+</style>
