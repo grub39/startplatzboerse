@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -13,8 +12,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import {
+  addPendingWatchlistId,
+  readPendingWatchlistIds,
+  removePendingWatchlistId,
+} from '../lib/watchlist';
 import { ListingCard } from '../components/ListingCard';
 import { EmptyDashboard } from '../components/DashboardComponents';
+import { ToastPopup } from '../components/ToastPopup';
 import { colors } from '../theme';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { Listing } from '../types';
@@ -28,6 +33,7 @@ import {
 type Props = {
   session: Session | null;
   onOpenListing: (id: string) => void;
+  onGoLogin: () => void;
 };
 
 const CATEGORIES = [
@@ -81,7 +87,7 @@ function matchesFullTextSearch(listing: Listing, normalizedQuery: string) {
   return terms.every((term) => haystack.includes(term));
 }
 
-export function SearchScreen({ session, onOpenListing }: Props) {
+export function SearchScreen({ session, onOpenListing, onGoLogin }: Props) {
   const insets = useSafeAreaInsets();
 
   const [allListings, setAllListings]         = useState<Listing[]>([]);
@@ -89,6 +95,7 @@ export function SearchScreen({ session, onOpenListing }: Props) {
   const [savedListingIds, setSavedListingIds]   = useState<Set<string>>(new Set());
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   const [searchQuery, setSearchQuery]       = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -111,7 +118,7 @@ export function SearchScreen({ session, onOpenListing }: Props) {
       const { data: listingsData, error: listingsError } = await supabase
         .from('listings')
         .select(
-          'id, category, event_name, event_date, location, plz, price, distance, distance_km, swim_dist, bike_dist, run_dist, description, status, approved, lat, lng'
+          'id, category, event_name, event_date, location, plz, price, price_type, distance, distance_km, swim_dist, bike_dist, run_dist, description, status, approved, lat, lng'
         )
         .eq('status', 'active')
         .eq('approved', true)
@@ -129,6 +136,8 @@ export function SearchScreen({ session, onOpenListing }: Props) {
         if (watchlistData) {
           savedIds = new Set(watchlistData.map((item) => item.listing_id));
         }
+      } else {
+        savedIds = await readPendingWatchlistIds();
       }
 
       setAllListings((listingsData ?? []) as Listing[]);
@@ -310,7 +319,20 @@ export function SearchScreen({ session, onOpenListing }: Props) {
 
   const toggleSave = async (listingId: string) => {
     if (!session?.user?.id) {
-      Alert.alert('Hinweis', 'Bitte logge dich ein, um Startplätze zu merken.');
+      const pending = await readPendingWatchlistIds();
+      if (pending.has(listingId)) {
+        await removePendingWatchlistId(listingId);
+        setSavedListingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(listingId);
+          return next;
+        });
+        return;
+      }
+
+      await addPendingWatchlistId(listingId);
+      setSavedListingIds((prev) => new Set(prev).add(listingId));
+      setLoginPromptVisible(true);
       return;
     }
 
@@ -615,6 +637,21 @@ export function SearchScreen({ session, onOpenListing }: Props) {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <ToastPopup
+        visible={loginPromptVisible}
+        type="info"
+        title="Anmelden"
+        text="Bitte logge dich ein, um Startplätze zu merken."
+        confirmText="Jetzt einloggen"
+        cancelText="Abbrechen"
+        showCancel
+        onConfirm={() => {
+          setLoginPromptVisible(false);
+          onGoLogin();
+        }}
+        onCancel={() => setLoginPromptVisible(false)}
+      />
     </View>
   );
 }

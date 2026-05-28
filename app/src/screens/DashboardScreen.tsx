@@ -22,10 +22,18 @@ import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { resolveAvatarDisplayUri, uploadProfileAvatar } from '../lib/avatar';
 import { supabase } from '../lib/supabase';
+import { DeleteAccountModal } from '../components/DeleteAccountModal';
 import { EmptyDashboard } from '../components/DashboardComponents';
 import { EditListingModal } from '../components/EditListingModal';
 import { ToastPopup } from '../components/ToastPopup';
+import { LegalDocumentScroll } from '../components/LegalDocumentScroll';
 import { SupportChatPanel } from '../components/SupportChatPanel';
+import {
+  APP_DATENSCHUTZ_INTRO,
+  APP_DATENSCHUTZ_SECTIONS,
+  APP_DATENSCHUTZ_STAND,
+} from '../constants/appDatenschutz';
+import { FAQ_ITEMS, faqAnswerToPlainText } from '../constants/faq';
 import { formatAppVersionLabel, getReleaseNotesForVersion } from '../constants/releaseNotes';
 import { fetchActiveSupportTicket, isActiveSupportTicketStatus } from '../lib/supportTicket';
 import { colors, radius } from '../theme';
@@ -35,15 +43,27 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const NAV_HEIGHT = 74;
 const BG_MAIN = '#2e2e2e';
 
-type SettingsPage = 'overview' | 'profil' | 'benachrichtigungen' | 'support' | 'rechtliches' | 'info';
+type SettingsPage =
+  | 'overview'
+  | 'profil'
+  | 'benachrichtigungen'
+  | 'support'
+  | 'faq'
+  | 'rechtliches'
+  | 'datenschutz'
+  | 'info';
 
 type Props = {
   session: Session | null;
   onSignOut: () => void;
   onGoLogin?: () => void;
   openSupportSignal?: number;
+  openSupportWithChat?: boolean;
+  onOpenSupportWithChatHandled?: () => void;
   supportNotificationNonce?: number;
   onSupportChatActiveChange?: (active: boolean) => void;
+  onSupportMessagesSeen?: () => void;
+  supportUnreadCount?: number;
   onPushMessagesEnabled?: () => void;
   /** Android: true = Zurück wurde im Dashboard verarbeitet */
   onConsumeAndroidBackPress?: (handler: (() => boolean) | null) => void;
@@ -54,8 +74,12 @@ export function DashboardScreen({
   onSignOut,
   onGoLogin,
   openSupportSignal = 0,
+  openSupportWithChat = false,
+  onOpenSupportWithChatHandled,
   supportNotificationNonce = 0,
   onSupportChatActiveChange,
+  onSupportMessagesSeen,
+  supportUnreadCount = 0,
   onPushMessagesEnabled,
   onConsumeAndroidBackPress,
 }: Props) {
@@ -84,19 +108,39 @@ export function DashboardScreen({
   const [settingsPage, setSettingsPage] = useState<SettingsPage>('overview');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [supportChatStarted, setSupportChatStarted] = useState(false);
+  const [hasActiveSupportTicket, setHasActiveSupportTicket] = useState(false);
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
 
-  const openSupportSettings = useCallback(() => {
-    setSettingsVisible(true);
-    setSettingsPage('support');
-    setSupportChatStarted(true);
-  }, []);
+  const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : insets.top;
+  /** Abstand unter Statusleiste / Notch – wie andere Tabs, etwas luftiger. */
+  const topInset = Math.max(insets.top, statusBarHeight);
+  const topScreenPadding = Math.max(topInset + 14, 48);
+  const modalHeight = SCREEN_HEIGHT - statusBarHeight - NAV_HEIGHT;
+  const settingsAnim = useRef(new Animated.Value(-SCREEN_HEIGHT)).current;
+  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+
+  /** Support-Unterseite sichtbar machen (slideAnim sonst off-screen). */
+  const revealSupportPage = useCallback(
+    (openChat: boolean) => {
+      setSettingsVisible(true);
+      setSettingsPage('support');
+      slideAnim.setValue(0);
+      if (openChat) {
+        setSupportChatStarted(true);
+      }
+    },
+    [slideAnim],
+  );
 
   useEffect(() => {
     if (openSupportSignal === 0) return;
-    openSupportSettings();
-  }, [openSupportSignal, openSupportSettings]);
+    revealSupportPage(openSupportWithChat);
+    if (openSupportWithChat) {
+      onOpenSupportWithChatHandled?.();
+    }
+  }, [openSupportSignal, openSupportWithChat, onOpenSupportWithChatHandled, revealSupportPage]);
 
   useEffect(() => {
     const isSupportActive =
@@ -107,17 +151,19 @@ export function DashboardScreen({
   const hydrateSupportChatFromTicket = useCallback(async (userId: string) => {
     try {
       const ticket = await fetchActiveSupportTicket(userId);
-      if (ticket) {
-        setSupportChatStarted(true);
-      }
+      setHasActiveSupportTicket(
+        Boolean(ticket && isActiveSupportTicketStatus(ticket.status)),
+      );
     } catch (err) {
       console.warn('Support-Ticket prüfen:', err);
+      setHasActiveSupportTicket(false);
     }
   }, []);
 
   useEffect(() => {
     if (!session?.user?.id) {
       setSupportChatStarted(false);
+      setHasActiveSupportTicket(false);
       return;
     }
 
@@ -136,10 +182,11 @@ export function DashboardScreen({
         (payload) => {
           const status = (payload.new as { status?: string }).status;
           if (status && isActiveSupportTicketStatus(status)) {
-            setSupportChatStarted(true);
+            setHasActiveSupportTicket(true);
             return;
           }
           if (status && !isActiveSupportTicketStatus(status)) {
+            setHasActiveSupportTicket(false);
             setSupportChatStarted(false);
           }
         },
@@ -153,6 +200,7 @@ export function DashboardScreen({
           filter: `user_id=eq.${session.user.id}`,
         },
         () => {
+          setHasActiveSupportTicket(false);
           setSupportChatStarted(false);
         },
       )
@@ -162,12 +210,6 @@ export function DashboardScreen({
       supabase.removeChannel(channel);
     };
   }, [hydrateSupportChatFromTicket, session?.user?.id]);
-
-  const statusBarHeight = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : insets.top;
-  const modalHeight = SCREEN_HEIGHT - statusBarHeight - NAV_HEIGHT;
-
-  const settingsAnim = useRef(new Animated.Value(-SCREEN_HEIGHT)).current;
-  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   const loadDashboard = useCallback(async () => {
     if (!session?.user?.id) {
@@ -182,7 +224,7 @@ export function DashboardScreen({
       // push_new_messages wird jetzt direkt mit abgefragt
       const [profileRes, ownRes, watchRes] = await Promise.all([
         supabase.from('profiles').select('nickname, updated_at, avatar_url, push_new_messages, registered_email').eq('id', session.user.id).single(),
-        supabase.from('listings').select('id, category, event_name, event_date, location, price, old_price, distance, distance_km, status, approved').eq('user_id', session.user.id).order('created_at', { ascending: false }),
+        supabase.from('listings').select('id, category, event_name, event_date, location, price, price_type, old_price, distance, distance_km, status, approved').eq('user_id', session.user.id).order('created_at', { ascending: false }),
         supabase.from('watchlist').select('id').eq('user_id', session.user.id),
       ]);
       if (profileRes.error) throw profileRes.error;
@@ -242,6 +284,9 @@ export function DashboardScreen({
   }, [settingsVisible]);
 
   function openSubPage(page: SettingsPage) {
+    if (page === 'support' && hasActiveSupportTicket) {
+      setSupportChatStarted(true);
+    }
     setSettingsPage(page);
     slideAnim.setValue(SCREEN_WIDTH);
     Animated.spring(slideAnim, {
@@ -262,6 +307,14 @@ export function DashboardScreen({
     });
   }, [slideAnim]);
 
+  const handleSettingsBack = useCallback(() => {
+    if (settingsPage === 'datenschutz') {
+      setSettingsPage('rechtliches');
+      return;
+    }
+    closeSubPage();
+  }, [closeSubPage, settingsPage]);
+
   const handleAndroidBackPress = useCallback(() => {
     if (editingId) {
       setEditingId(null);
@@ -273,13 +326,13 @@ export function DashboardScreen({
     }
 
     if (settingsPage !== 'overview') {
-      closeSubPage();
+      handleSettingsBack();
       return true;
     }
 
     setSettingsVisible(false);
     return true;
-  }, [closeSubPage, editingId, settingsPage, settingsVisible]);
+  }, [editingId, handleSettingsBack, settingsPage, settingsVisible]);
 
   useEffect(() => {
     onConsumeAndroidBackPress?.(handleAndroidBackPress);
@@ -471,21 +524,13 @@ export function DashboardScreen({
     }
 
     setSettingsVisible(false);
-    setTimeout(() => {
-      setPopup({
-        visible: true,
-        type: 'destructive',
-        title: 'Konto löschen',
-        text: 'Dein Konto und alle deine Daten werden unwiderruflich gelöscht. Bist du sicher?',
-        confirmText: 'Löschen',
-        cancelText: 'Abbrechen',
-        onConfirm: async () => {
-          setPopup(p => ({ ...p, visible: false }));
-          await supabase.auth.signOut();
-        },
-        onCancel: () => setPopup(p => ({ ...p, visible: false }))
-      });
-    }, 300);
+    setTimeout(() => setDeleteAccountVisible(true), 300);
+  };
+
+  const handleAccountDeleted = async () => {
+    setDeleteAccountVisible(false);
+    await supabase.auth.signOut();
+    onSignOut?.();
   };
 
   const settingsStyle = {
@@ -512,14 +557,24 @@ export function DashboardScreen({
 
       <Text style={s.groupLabel}>Informationen</Text>
       <View style={s.menuGroup}>
+        <SettingsRow icon="question-circle" label="FAQ" onPress={() => openSubPage('faq')} />
+        <View style={s.divider} />
         <SettingsRow
           icon="info-circle"
-          label="Info"
+          label="Version & Updates"
           detail={formatAppVersionLabel()}
           onPress={() => openSubPage('info')}
         />
-        <View style={s.divider} />
-        <SettingsRow icon="question-circle" label="Hilfe & Support" onPress={() => openSubPage('support')} />
+      </View>
+
+      <Text style={s.groupLabel}>Hilfe</Text>
+      <View style={s.menuGroup}>
+        <SettingsRow
+          icon="life-ring"
+          label="Hilfe & Support"
+          badgeCount={supportUnreadCount}
+          onPress={() => openSubPage('support')}
+        />
         <View style={s.divider} />
         <SettingsRow icon="file-alt" label="Rechtliches" onPress={() => openSubPage('rechtliches')} />
       </View>
@@ -729,16 +784,12 @@ export function DashboardScreen({
     setSupportChatStarted(true);
   };
 
-  const renderSupportBrowse = () => (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={[s.pageContent, { paddingTop: 12, paddingBottom: 40 }]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-    >
+  const supportCurtainHeaderOffset = topScreenPadding + 14 + 44;
+
+  const renderSupportContactChoices = () => (
+    <>
       <Text style={s.supportIntro}>
-        Wähle, wie du uns erreichen möchtest. Tippe auf „Support-Chat starten“ und schreib uns deine Frage.
+        Wähle, wie du uns erreichen möchtest – per E-Mail oder im Live-Chat.
       </Text>
 
       <Text style={s.groupLabel}>Kontakt</Text>
@@ -759,64 +810,83 @@ export function DashboardScreen({
         <Pressable style={s.linkRow} onPress={handleStartSupportChat}>
           <FontAwesome5 name="comments" size={14} color={colors.cyan} style={{ width: 20 }} />
           <View style={{ flex: 1 }}>
-            <Text style={s.rowLabel}>Support-Chat starten</Text>
+            <Text style={s.rowLabel}>
+              {hasActiveSupportTicket ? 'Support-Chat fortsetzen' : 'Support-Chat starten'}
+            </Text>
             <Text style={s.rowSub}>Live im Chat – Antwort vom Team</Text>
           </View>
+          {supportUnreadCount > 0 ? (
+            <View style={s.menuBadge}>
+              <Text style={s.menuBadgeText}>
+                {supportUnreadCount > 99 ? '99+' : supportUnreadCount}
+              </Text>
+            </View>
+          ) : null}
           <FontAwesome5 name="chevron-right" size={12} color="#555" />
         </Pressable>
       </View>
+    </>
+  );
 
-      <Text style={s.groupLabel}>Häufige Fragen</Text>
+  const renderSupport = () => {
+    if (supportChatStarted) {
+      return (
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? supportCurtainHeaderOffset : 0}
+        >
+          <View style={[s.pageContent, { flex: 1, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <SupportChatPanel
+              session={session}
+              started={supportChatStarted}
+              expanded
+              onGoLogin={onGoLogin}
+              isScreenActive={settingsVisible && settingsPage === 'support'}
+              refreshNonce={supportNotificationNonce}
+              onTicketClosed={() => {
+                setSupportChatStarted(false);
+                setHasActiveSupportTicket(false);
+              }}
+              onMinimize={() => setSupportChatStarted(false)}
+              onTicketActive={() => setHasActiveSupportTicket(true)}
+              onMessagesSeen={onSupportMessagesSeen}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      );
+    }
+
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[s.pageContent, { paddingTop: 12, paddingBottom: 40 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        {renderSupportContactChoices()}
+      </ScrollView>
+    );
+  };
+
+  const renderFaq = () => (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={s.pageContent} showsVerticalScrollIndicator={false}>
+      <Text style={s.faqPageIntro}>
+        Alles, was du über den Ablauf wissen musst – wie auf der Website.
+      </Text>
       <View style={s.menuGroup}>
-        <FaqRow
-          question="Wie funktioniert die Ummeldung?"
-          answer="Du musst die Ummeldung vorab mit dem Veranstalter klären. Viele Veranstalter erlauben Namensänderungen gegen eine Gebühr."
-        />
-        <View style={s.divider} />
-        <FaqRow
-          question="Wie bezahle ich sicher?"
-          answer="Wir empfehlen Zahlung per Überweisung oder PayPal Freunde & Familie. Treffe dich wenn möglich persönlich zur Übergabe."
-        />
-        <View style={s.divider} />
-        <FaqRow
-          question="Was kostet das Inserieren?"
-          answer="Das Inserieren ist kostenlos. Die Plattform finanziert sich durch zukünftige Premium-Features."
-        />
+        {FAQ_ITEMS.map((item, index) => (
+          <View key={item.question}>
+            {index > 0 ? <View style={s.divider} /> : null}
+            <FaqRow
+              question={item.question}
+              answer={faqAnswerToPlainText(item.answerHtml)}
+            />
+          </View>
+        ))}
       </View>
     </ScrollView>
-  );
-
-  const renderSupportChat = () => (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <View
-        style={[
-          s.pageContent,
-          {
-            flex: 1,
-            paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom, 12),
-          },
-        ]}
-      >
-        <SupportChatPanel
-          session={session}
-          started={supportChatStarted}
-          expanded
-          onGoLogin={onGoLogin}
-          isScreenActive={settingsVisible && settingsPage === 'support'}
-          refreshNonce={supportNotificationNonce}
-          onTicketClosed={() => setSupportChatStarted(false)}
-        />
-      </View>
-    </KeyboardAvoidingView>
-  );
-
-  const renderSupport = () => (
-    supportChatStarted ? renderSupportChat() : renderSupportBrowse()
   );
 
   // ── RECHTLICHES ────────────────────────────────────────────────
@@ -824,25 +894,50 @@ export function DashboardScreen({
     <ScrollView style={{ flex: 1 }} contentContainerStyle={s.pageContent} showsVerticalScrollIndicator={false}>
       <Text style={s.groupLabel}>Dokumente</Text>
       <View style={s.menuGroup}>
-        <Pressable style={s.linkRow} onPress={() => Linking.openURL('https://deinedomain.de/datenschutz')}>
+        <Pressable style={s.linkRow} onPress={() => openSubPage('datenschutz')}>
           <FontAwesome5 name="shield-alt" size={14} color={colors.cyan} style={{ width: 20 }} />
-          <Text style={[s.rowLabel, { flex: 1 }]}>Datenschutzerklärung</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={s.rowLabel}>Datenschutzerklärung (App)</Text>
+            <Text style={s.rowSub}>Berechtigungen, Push, Support-Chat</Text>
+          </View>
           <FontAwesome5 name="chevron-right" size={12} color="#555" />
         </Pressable>
         <View style={s.divider} />
-        <Pressable style={s.linkRow} onPress={() => Linking.openURL('https://deinedomain.de/agb')}>
+        <Pressable
+          style={s.linkRow}
+          onPress={() => Linking.openURL('https://startplatzboerse.com/datenschutz')}
+        >
+          <FontAwesome5 name="globe" size={14} color={colors.cyan} style={{ width: 20 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={s.rowLabel}>Datenschutz Website</Text>
+            <Text style={s.rowSub}>Ergänzende Hinweise zur Webseite</Text>
+          </View>
+          <FontAwesome5 name="external-link-alt" size={11} color="#555" />
+        </Pressable>
+        <View style={s.divider} />
+        <Pressable style={s.linkRow} onPress={() => Linking.openURL('https://startplatzboerse.com/agb')}>
           <FontAwesome5 name="file-contract" size={14} color={colors.cyan} style={{ width: 20 }} />
           <Text style={[s.rowLabel, { flex: 1 }]}>Nutzungsbedingungen</Text>
-          <FontAwesome5 name="chevron-right" size={12} color="#555" />
+          <FontAwesome5 name="external-link-alt" size={11} color="#555" />
         </Pressable>
         <View style={s.divider} />
-        <Pressable style={s.linkRow} onPress={() => Linking.openURL('https://deinedomain.de/impressum')}>
+        <Pressable style={s.linkRow} onPress={() => Linking.openURL('https://startplatzboerse.com/impressum')}>
           <FontAwesome5 name="building" size={14} color={colors.cyan} style={{ width: 20 }} />
           <Text style={[s.rowLabel, { flex: 1 }]}>Impressum</Text>
-          <FontAwesome5 name="chevron-right" size={12} color="#555" />
+          <FontAwesome5 name="external-link-alt" size={11} color="#555" />
         </Pressable>
       </View>
     </ScrollView>
+  );
+
+  const renderDatenschutz = () => (
+    <LegalDocumentScroll
+      title="Datenschutzerklärung"
+      intro={APP_DATENSCHUTZ_INTRO}
+      standLabel={APP_DATENSCHUTZ_STAND}
+      sections={APP_DATENSCHUTZ_SECTIONS}
+      footerNote="Fragen? info@startplatzboerse.com"
+    />
   );
 
   const subPageTitles: Record<SettingsPage, string> = {
@@ -850,8 +945,10 @@ export function DashboardScreen({
     profil: 'Profil & Konto',
     benachrichtigungen: 'Benachrichtigungen',
     support: 'Hilfe & Support',
+    faq: 'FAQ',
     rechtliches: 'Rechtliches',
-    info: 'Info',
+    datenschutz: 'Datenschutz',
+    info: 'Version & Updates',
   };
 
   return (
@@ -861,10 +958,17 @@ export function DashboardScreen({
         contentContainerStyle={[styles.dashboardContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 16 : 50 }]}>
+        <View style={[styles.header, { paddingTop: topScreenPadding }]}>
           <Text style={styles.headerTitle}>Dashboard</Text>
           <Pressable style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
             <FontAwesome5 name="cog" size={20} color="#ffffff" />
+            {supportUnreadCount > 0 ? (
+              <View style={styles.settingsBadge}>
+                <Text style={styles.settingsBadgeText}>
+                  {supportUnreadCount > 99 ? '99+' : supportUnreadCount}
+                </Text>
+              </View>
+            ) : null}
           </Pressable>
         </View>
 
@@ -915,7 +1019,12 @@ export function DashboardScreen({
               <View key={listing.id} style={[styles.nativeOwnCard, listing.status === 'archived' && { opacity: 0.7 }]}>
                 <Text style={styles.listingEyebrow}>{listing.category}</Text>
                 <Text style={styles.listingTitle}>{listing.event_name}</Text>
-                <View style={styles.priceContainer}><Text style={styles.listingPrice}>{listing.price} €</Text></View>
+                <View style={styles.priceContainer}>
+                  <Text style={styles.listingPrice}>{listing.price} €</Text>
+                  <Text style={styles.listingPriceType}>
+                    {listing.price_type === 'vb' ? 'Verhandlungsbasis' : 'Festpreis'}
+                  </Text>
+                </View>
                 <View style={styles.nativeCardActions}>
                   {listing.status !== 'archived' ? (
                     <>
@@ -934,9 +1043,9 @@ export function DashboardScreen({
 
       {/* ── SETTINGS VORHANG ─────────────────────────────────── */}
       <Animated.View style={settingsStyle}>
-        <View style={s.curtainHeader}>
+        <View style={[s.curtainHeader, { paddingTop: topScreenPadding }]}>
           {settingsPage !== 'overview' ? (
-            <Pressable onPress={closeSubPage} style={s.backBtn}>
+            <Pressable onPress={handleSettingsBack} style={s.backBtn}>
               <FontAwesome5 name="chevron-left" size={14} color={colors.cyan} />
               <Text style={s.backBtnText}>Zurück</Text>
             </Pressable>
@@ -958,7 +1067,9 @@ export function DashboardScreen({
             {settingsPage === 'profil' ? renderProfil() : null}
             {settingsPage === 'benachrichtigungen' ? renderBenachrichtigungen() : null}
             {settingsPage === 'support' ? renderSupport() : null}
+            {settingsPage === 'faq' ? renderFaq() : null}
             {settingsPage === 'rechtliches' ? renderRechtliches() : null}
+            {settingsPage === 'datenschutz' ? renderDatenschutz() : null}
             {settingsPage === 'info' ? renderInfo() : null}
           </Animated.View>
         ) : null}
@@ -967,6 +1078,12 @@ export function DashboardScreen({
       {editingId ? (
         <EditListingModal listingId={editingId} onClose={() => setEditingId(null)} onRefresh={loadDashboard} />
       ) : null}
+
+      <DeleteAccountModal
+        visible={deleteAccountVisible}
+        onClose={() => setDeleteAccountVisible(false)}
+        onDeleted={handleAccountDeleted}
+      />
 
       {/* Die unifizierte, weiche ToastPopup-Komponente */}
       <ToastPopup
@@ -990,19 +1107,28 @@ function SettingsRow({
   icon,
   label,
   detail,
+  badgeCount = 0,
   onPress,
   locked = false,
 }: {
   icon: string;
   label: string;
   detail?: string;
+  badgeCount?: number;
   onPress: () => void;
   locked?: boolean;
 }) {
+  const showBadge = badgeCount > 0;
+
   return (
     <Pressable style={s.linkRow} onPress={onPress} hitSlop={8}>
       <FontAwesome5 name={icon} size={15} color={locked ? '#444' : colors.cyan} style={{ width: 22 }} />
       <Text style={[s.rowLabel, { flex: 1, opacity: locked ? 0.4 : 1 }]}>{label}</Text>
+      {showBadge ? (
+        <View style={s.menuBadge}>
+          <Text style={s.menuBadgeText}>{badgeCount > 99 ? '99+' : badgeCount}</Text>
+        </View>
+      ) : null}
       {detail ? <Text style={s.rowValue}>{detail}</Text> : null}
       {locked ? <FontAwesome5 name="lock" size={11} color="#555" /> : null}
       <FontAwesome5 name="chevron-right" size={12} color="#555" />
@@ -1027,7 +1153,15 @@ function FaqRow({ question, answer }: { question: string; answer: string }) {
 
 // Styles bleiben identisch...
 const s = StyleSheet.create({
-  curtainHeader: { flexDirection: 'row', alignItems: 'center', justifyBox: 'space-between', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 12 : 54, paddingBottom: 14, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  curtainHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   curtainTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   backBtn: {
     flexDirection: 'row',
@@ -1046,6 +1180,13 @@ const s = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  faqPageIntro: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 8,
     paddingHorizontal: 4,
   },
   groupLabel: { color: '#666666', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, marginLeft: 4 },
@@ -1070,6 +1211,21 @@ const s = StyleSheet.create({
   rowLabel: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
   rowSub: { color: '#666', fontSize: 12, marginTop: 2, lineHeight: 16 },
   rowValue: { color: '#666666', fontSize: 14, maxWidth: '50%', textAlign: 'right' },
+  menuBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    backgroundColor: colors.cyan,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuBadgeText: {
+    color: colors.bg,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 13,
+  },
   comingSoon: { color: '#444', fontSize: 12, fontWeight: '600', fontStyle: 'italic' },
   avatarRow: {
     flexDirection: 'row',
@@ -1130,6 +1286,19 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   headerTitle: { color: '#ffffff', fontSize: 20, fontWeight: '900' },
   settingsButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  settingsBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    backgroundColor: colors.cyan,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsBadgeText: { color: '#000000', fontSize: 10, fontWeight: '900' },
   profileHero: { backgroundColor: colors.card, borderRadius: 24, padding: 20, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   avatar: { width: 90, height: 90, borderRadius: 16, backgroundColor: '#222', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   avatarImage: { width: '100%', height: '100%' },
@@ -1152,6 +1321,14 @@ const styles = StyleSheet.create({
   listingTitle: { color: '#fff', fontSize: 17, fontWeight: '900' },
   priceContainer: { marginVertical: 4 },
   listingPrice: { color: colors.cyan, fontSize: 24, fontWeight: '900' },
+  listingPriceType: {
+    color: '#777',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginTop: 2,
+  },
   nativeCardActions: { flexDirection: 'row', gap: 10, marginTop: 10, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.05)', paddingTop: 12 },
   nativeEditBtn: { flex: 1, height: 40, backgroundColor: colors.cyan, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   nativeEditBtnText: { color: '#000', fontWeight: '900' },

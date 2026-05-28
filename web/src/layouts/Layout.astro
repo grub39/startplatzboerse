@@ -1,5 +1,6 @@
 ---
 import Header from '../components/Header.astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import '../styles/global.css';
 
 const { 
@@ -46,5 +47,6 @@ const {
     <body>
         <Header />
         <slot />
+        <SpeedInsights />
     </body>
 </html>

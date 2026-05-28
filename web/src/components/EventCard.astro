@@ -6,6 +6,7 @@ const {
     location, 
     distance, 
     price, 
+    priceType = 'fixed',
     oldPrice, 
     nickname = "Gast",
     id
@@ -61,6 +62,7 @@ const valueText = oldPrice ? `${oldPrice}€` : null;
                     <span class="old">{valueText}</span>
                 )}
                 <span class="price">{currentPrice}€</span>
+                <span class="price-type">{priceType === 'vb' ? 'VB' : 'Festpreis'}</span>
             </div>
             
             <a href={`/listing/${id}`} class="details-btn">
@@ -99,7 +101,7 @@ const valueText = oldPrice ? `${oldPrice}€` : null;
     }
 
     .card-top-row {
-        padding-right: 40px;
+        padding-right: 44px;
     }
 
     .category { 
@@ -116,7 +118,7 @@ const valueText = oldPrice ? `${oldPrice}€` : null;
         font-weight: 900; 
         letter-spacing: -0.5px;
         line-height: 1.1;
-        padding-right: 40px;
+        padding-right: 44px;
     }
 
     .location-row {
@@ -179,6 +181,13 @@ const valueText = oldPrice ? `${oldPrice}€` : null;
     }
     .old { 
         text-decoration: line-through; color: #444; font-weight: 600; font-size: 1rem; 
+    }
+    .price-type {
+        color: #777;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
     }
 
     .details-btn {

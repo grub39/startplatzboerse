@@ -2,12 +2,13 @@
 import Layout from '../layouts/Layout.astro';
 import Footer from '../components/Footer.astro';
 import FeedbackBanner from '../components/FeedbackBanner.astro';
+import '../styles/inserieren-form.css';
 ---
 
 <Layout title="Startplatz inserieren - Startplatzbörse">
     <main class="page-wrapper">
         <div class="form-wrapper">
-            <div class="container">
+            <div class="form-card">
 
                 <!-- PROGRESS BAR (4 Schritte) -->
                 <div class="progress-bar">
@@ -21,43 +22,50 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
                 </div>
 
                 <!-- ───── SCHRITT 1: AUTH (unverändert) ───── -->
-                <div id="auth-section">
-                    <div class="heading" id="auth-heading">Wer bist du?</div>
-                    <p class="info-text">Wir brauchen kurz deine E-Mail für die Verifizierung.</p>
+                <div id="auth-section" class="form-step">
+                    <header class="form-header">
+                        <span class="step-badge">Schritt 1 · Anmeldung</span>
+                        <h1 class="form-title" id="auth-heading">Wer bist du?</h1>
+                        <p class="form-lead">Wir brauchen kurz deine E-Mail für die Verifizierung.</p>
+                    </header>
 
-                    <div id="auth-step-email">
-                        <label class="input-label">E-Mail Adresse</label>
-                        <input class="input" type="email" id="email" placeholder="deine@mail.de" maxlength="50">
-                        <button class="login-button" id="btn-send-otp">Code anfordern</button>
+                    <div id="auth-step-email" class="form-panel">
+                        <div class="field">
+                            <label class="field-label" for="email">E-Mail Adresse</label>
+                            <input class="field-input" type="email" id="email" placeholder="deine@mail.de" maxlength="50">
+                        </div>
+                        <button type="button" class="btn-primary" id="btn-send-otp">Code anfordern</button>
                     </div>
 
-                    <div id="auth-step-otp" style="display: none;">
-                        <input class="input" type="text" id="otp-code" placeholder="123456" maxlength="6"
-                            style="text-align: center; letter-spacing: 5px;"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                        <button class="login-button" id="btn-verify-otp">Identität bestätigen</button>
+                    <div id="auth-step-otp" class="form-panel" style="display: none;">
+                        <div class="field">
+                            <label class="field-label" for="otp-code">6-stelliger Code</label>
+                            <input class="field-input otp-input" type="text" id="otp-code" placeholder="123456" maxlength="6"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                        </div>
+                        <button type="button" class="btn-primary" id="btn-verify-otp">Identität bestätigen</button>
                     </div>
 
-                    <div id="auth-step-profile" class="profile" style="display: none;">
-                        <div class="input-group">
-                            <label class="input-label">Vorname</label>
-                            <input class="input" type="text" id="vorname" placeholder="Dein Vorname" maxlength="30">
+                    <div id="auth-step-profile" class="form-panel profile" style="display: none;">
+                        <div class="field">
+                            <label class="field-label" for="vorname">Vorname</label>
+                            <input class="field-input" type="text" id="vorname" placeholder="Dein Vorname" maxlength="30">
                         </div>
-                        <div class="input-group">
-                            <label class="input-label">Nachname</label>
-                            <input class="input" type="text" id="nachname" placeholder="Dein Nachname" maxlength="30">
+                        <div class="field">
+                            <label class="field-label" for="nachname">Nachname</label>
+                            <input class="field-input" type="text" id="nachname" placeholder="Dein Nachname" maxlength="30">
                         </div>
-                        <div class="input-group">
-                            <label class="input-label">Dein Nickname</label>
-                            <input class="input" type="text" id="nickname" placeholder="3-20 Zeichen" maxlength="20">
+                        <div class="field">
+                            <label class="field-label" for="nickname">Dein Nickname</label>
+                            <input class="field-input" type="text" id="nickname" placeholder="3–20 Zeichen" maxlength="20">
                         </div>
-                        <div class="checkbox-group">
+                        <div class="checkbox-row">
                             <input type="checkbox" id="agb-consent" />
-                            <label for="agb-consent" class="agb-label">
-                                Ich stimme den <a href="/agb" class="agb-link" target="_blank">AGB</a> zu.
+                            <label for="agb-consent" class="checkbox-row-label">
+                                Ich stimme den <a href="/agb" class="text-link" target="_blank" rel="noopener">AGB</a> zu.
                             </label>
                         </div>
-                        <button class="login-button" id="btn-save-profile">Profil speichern & weiter</button>
+                        <button type="button" class="btn-primary" id="btn-save-profile">Profil speichern & weiter</button>
                     </div>
                 </div>
 
@@ -65,119 +73,182 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
                 <form id="listing-form" style="display: none;" novalidate>
 
                     <!-- SCHRITT 2: Event-Info + Distanz -->
-                    <div id="listing-step-2">
-                        <div class="heading">Das Event</div>
-                        <p class="info-text">Grundlegende Informationen zum Event.</p>
+                    <div id="listing-step-2" class="form-step">
+                        <header class="form-header">
+                            <span class="step-badge">Schritt 2 · Event</span>
+                            <h2 class="form-title">Das Event</h2>
+                            <p class="form-lead">Grundlegende Informationen zum Event.</p>
+                        </header>
 
-                        <label class="input-label">Sportart</label>
-                        <select required class="input select-input" id="category" name="category">
+                        <div class="form-panel">
+                        <div class="field">
+                        <label class="field-label" for="category">Sportart</label>
+                        <select required class="field-input field-select" id="category" name="category">
                             <option value="" disabled selected>Bitte wählen...</option>
                             <option value="Laufen">Laufen</option>
                             <option value="Radrennen">Radrennen</option>
                             <option value="Triathlon">Triathlon</option>
                             <option value="Hyrox">Hyrox</option>
                         </select>
-
-                        <label class="input-label">Name des Events</label>
-                        <input required class="input" type="text" name="event_name" placeholder="z.B. Berlin Marathon" maxlength="100">
-
-                        <label class="input-label">Datum des Events</label>
-                        <input required class="input" type="date" id="event_date" name="event_date">
-
-                        <!-- Distanz-Felder (nach Sportart) -->
-                        <div id="distance-dropdown-wrapper">
-                            <label class="input-label">Distanz / Kategorie</label>
-                            <select required class="input select-input" id="distance-select" name="distance">
-                                <option value="">Erst Sportart wählen</option>
-                            </select>
                         </div>
 
-                        <div id="custom-distance-wrapper" style="display: none;">
-                            <label class="input-label" id="custom-distance-label">Kilometer (km)</label>
-                            <input class="input" type="number" id="custom-distance" name="distance_km" placeholder="z.B. 65" step="0.1" min="0.1" max="5000" inputmode="decimal">
+                        <div class="field">
+                        <label class="field-label" for="event_name">Name des Events</label>
+                        <input required class="field-input" type="text" id="event_name" name="event_name" placeholder="z.B. Berlin Marathon" maxlength="100">
                         </div>
 
-                        <div class="row tri-dist-row" id="custom-triathlon-wrapper" style="display: none;">
-                            <div class="col">
-                                <label class="input-label">Schwimmen (km)</label>
-                                <input class="input" type="number" id="custom-swim" name="swim_dist" placeholder="z.B. 2" step="0.1" min="0.1" max="5000" inputmode="decimal">
+                        <div class="field">
+                        <label class="field-label">Datum des Events</label>
+                        <button type="button" class="field-input date-trigger" id="event-date-trigger" aria-haspopup="dialog" aria-controls="date-picker-modal">
+                            <span id="event-date-display">Datum wählen</span>
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                        </button>
+                        <input type="hidden" id="event_date" name="event_date" required>
+                        </div>
+
+                        <!-- Distanz (Pills wie App; Ultra/Trail als Spezialisierung) -->
+                        <input type="hidden" id="distance-select" name="distance" value="" />
+
+                        <div id="laufen-special-section" class="laufen-special-section field" hidden>
+                            <label class="field-label">Spezialisierung</label>
+                            <p class="field-hint laufen-special-hint">Optional — für Ultra- oder Trail-Events mit erweiterten Angaben.</p>
+                            <div class="special-list">
+                                <button type="button" class="special-row" data-special="Ultra">
+                                    <span class="special-row-body">
+                                        <span class="special-row-title">Ultra</span>
+                                        <span class="special-row-sub">Distanz- oder Zeitläufe ab Marathon</span>
+                                    </span>
+                                    <span class="special-row-chevron" aria-hidden="true">›</span>
+                                </button>
+                                <button type="button" class="special-row" data-special="Trail">
+                                    <span class="special-row-body">
+                                        <span class="special-row-title">Trail</span>
+                                        <span class="special-row-sub">Geländelauf mit Höhenmetern</span>
+                                    </span>
+                                    <span class="special-row-chevron" aria-hidden="true">›</span>
+                                </button>
                             </div>
-                            <div class="col">
-                                <label class="input-label">Rad (km)</label>
-                                <input class="input" type="number" id="custom-bike" name="bike_dist" placeholder="z.B. 60" step="0.1" min="0.1" max="5000" inputmode="decimal">
+                            <button type="button" class="special-remove" id="btn-remove-special" hidden>Spezialisierung entfernen</button>
+                        </div>
+
+                        <div id="distance-pills-wrapper" class="field">
+                            <label class="field-label" id="distance-pills-label">Distanz / Kategorie</label>
+                            <p class="field-hint" id="distance-pills-muted" hidden>Deaktiviert, solange Ultra oder Trail gewählt ist.</p>
+                            <div id="distance-pills" class="pill-scroll" role="group" aria-labelledby="distance-pills-label"></div>
+                        </div>
+
+                        <div id="custom-distance-wrapper" class="field" style="display: none;">
+                            <label class="field-label" id="custom-distance-label">Kilometer (km)</label>
+                            <input class="field-input" type="number" id="custom-distance" name="distance_km" placeholder="z.B. 65" step="0.1" min="0.1" max="5000" inputmode="decimal">
+                        </div>
+
+                        <div class="field-row tri-dist-row" id="custom-triathlon-wrapper" style="display: none;">
+                            <div class="field">
+                                <label class="field-label">Schwimmen (km)</label>
+                                <input class="field-input" type="number" id="custom-swim" name="swim_dist" placeholder="z.B. 2" step="0.1" min="0.1" max="5000" inputmode="decimal">
                             </div>
-                            <div class="col">
-                                <label class="input-label">Laufen (km)</label>
-                                <input class="input" type="number" id="custom-run" name="run_dist" placeholder="z.B. 15" step="0.1" min="0.1" max="5000" inputmode="decimal">
+                            <div class="field">
+                                <label class="field-label">Rad (km)</label>
+                                <input class="field-input" type="number" id="custom-bike" name="bike_dist" placeholder="z.B. 60" step="0.1" min="0.1" max="5000" inputmode="decimal">
+                            </div>
+                            <div class="field">
+                                <label class="field-label">Laufen (km)</label>
+                                <input class="field-input" type="number" id="custom-run" name="run_dist" placeholder="z.B. 15" step="0.1" min="0.1" max="5000" inputmode="decimal">
                             </div>
                         </div>
 
-                        <div id="run-ultra-wrapper" class="run-detail-panel" hidden>
-                            <p class="run-detail-title">Ultra — Details</p>
-                            <label class="input-label">Art des Ultralaufs</label>
-                            <select class="input select-input" id="ultra-format">
+                        <div class="field">
+                        <label class="field-label" for="event_url">Veranstalter-Homepage (optional)</label>
+                        <input class="field-input" type="url" id="event_url" name="event_url" placeholder="https://www.berlin-marathon.de" maxlength="255">
+                        </div>
+
+                        <button type="button" class="btn-primary" id="btn-step2-next">Weiter</button>
+                        </div>
+                    </div>
+
+                    <!-- SCHRITT 2b: Ultra / Trail Details (wie App) -->
+                    <div id="listing-step-2b" class="form-step" style="display: none;">
+                        <header class="form-header">
+                            <span class="step-badge">Schritt 2 · Details</span>
+                            <h2 class="form-title" id="run-special-heading">Ultra — Details</h2>
+                            <p class="form-lead" id="run-special-subtitle">Distanz oder Dauer, optional Cut-off und Untergrund.</p>
+                        </header>
+
+                        <div class="form-panel">
+                        <div id="run-ultra-wrapper" class="run-detail-panel">
+                            <label class="field-label" for="ultra-format">Art des Ultralaufs</label>
+                            <select class="field-input field-select" id="ultra-format">
                                 <option value="distance">Distanz-basiert</option>
                                 <option value="time">Zeit-basiert</option>
                                 <option value="backyard">Backyard Ultra</option>
                             </select>
-                            <div class="row">
-                                <div class="col">
-                                    <label class="input-label" id="ultra-value-label">Distanz / Stunden</label>
-                                    <input class="input" type="number" id="ultra-value" step="0.1" min="0.1" placeholder="z.B. 100" inputmode="decimal">
+                            <div class="field-row">
+                                <div class="field">
+                                    <label class="field-label" id="ultra-value-label">Distanz / Stunden</label>
+                                    <input class="field-input" type="number" id="ultra-value" step="0.1" min="0.1" placeholder="z.B. 100" inputmode="decimal">
                                 </div>
-                                <div class="col" id="ultra-unit-wrap">
-                                    <label class="input-label">Einheit</label>
-                                    <select class="input select-input" id="ultra-unit">
+                                <div class="field" id="ultra-unit-wrap">
+                                    <label class="field-label" for="ultra-unit">Einheit</label>
+                                    <select class="field-input field-select" id="ultra-unit">
                                         <option value="km">Kilometer</option>
                                         <option value="mi">Meilen</option>
                                     </select>
                                 </div>
                             </div>
-                            <label class="input-label">Cut-off-Zeit (optional)</label>
-                            <input class="input" type="text" id="ultra-cutoff" placeholder="z. B. 12 oder 6:30" maxlength="8" inputmode="decimal">
-                            <label class="input-label">Untergrund / Modus</label>
-                            <select class="input select-input" id="ultra-surface">
+                            <div class="field">
+                            <label class="field-label" for="ultra-cutoff">Cut-off-Zeit (optional)</label>
+                            <input class="field-input" type="text" id="ultra-cutoff" placeholder="z. B. 12 oder 6:30" maxlength="8" inputmode="decimal">
+                            </div>
+                            <div class="field">
+                            <label class="field-label" for="ultra-surface">Untergrund / Modus</label>
+                            <select class="field-input field-select" id="ultra-surface">
                                 <option value="road">Straße / Asphalt</option>
                                 <option value="track">Bahn (400 m-Schleife)</option>
                                 <option value="loop">Rundkurs (flach, gemischt)</option>
                             </select>
-                            <div class="checkbox-wrapper">
-                                <input type="checkbox" id="ultra-quali" />
-                                <label for="ultra-quali">Qualifikationsnachweis erforderlich</label>
                             </div>
-                            <input class="input" type="text" id="ultra-quali-note" placeholder="z.B. Marathon-Finisher unter 4 h" maxlength="120" hidden>
-                            <label class="input-label">Zusatzleistungen (optional)</label>
-                            <div class="checkbox-group run-check-group">
+                            <div class="checkbox-row">
+                                <input type="checkbox" id="ultra-quali" />
+                                <label for="ultra-quali" class="checkbox-row-label">Qualifikationsnachweis erforderlich</label>
+                            </div>
+                            <input class="field-input" type="text" id="ultra-quali-note" placeholder="z.B. Marathon-Finisher unter 4 h" maxlength="120" hidden>
+                            <div class="field">
+                            <span class="field-label">Zusatzleistungen (optional)</span>
+                            <div class="check-stack run-check-group">
                                 <label><input type="checkbox" name="ultra-extra" value="depot" /> Eigenverpflegung-Depot</label>
                                 <label><input type="checkbox" name="ultra-extra" value="medal_engraving" /> Medaillengravur</label>
                                 <label><input type="checkbox" name="ultra-extra" value="finisher_shirt" /> Finisher-Shirt</label>
                             </div>
+                            </div>
                         </div>
 
                         <div id="run-trail-wrapper" class="run-detail-panel" hidden>
-                            <p class="run-detail-title">Trail — Details</p>
-                            <label class="input-label">Distanz-Kategorie</label>
-                            <select class="input select-input" id="trail-band">
+                            <div class="field">
+                            <label class="field-label" for="trail-band">Distanz-Kategorie</label>
+                            <select class="field-input field-select" id="trail-band">
                                 <option value="sprint">Trail-Sprint (&lt; 15 km)</option>
                                 <option value="medium">Trail / Medium (15–41 km)</option>
                                 <option value="ultra_trail">Ultra-Trail (≥ 42 km)</option>
                             </select>
-                            <div class="row">
-                                <div class="col">
-                                    <label class="input-label">Strecke (km)</label>
-                                    <input class="input" type="number" id="trail-km" step="0.1" min="0.1" placeholder="30" inputmode="decimal">
+                            </div>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label class="field-label" for="trail-km">Strecke (km)</label>
+                                    <input class="field-input" type="number" id="trail-km" step="0.1" min="0.1" placeholder="30" inputmode="decimal">
                                 </div>
-                                <div class="col">
-                                    <label class="input-label">Hm+ (Aufstieg)</label>
-                                    <input class="input" type="number" id="trail-hm-plus" min="0" placeholder="2000" inputmode="numeric">
+                                <div class="field">
+                                    <label class="field-label" for="trail-hm-plus">Hm+ (Aufstieg)</label>
+                                    <input class="field-input" type="number" id="trail-hm-plus" min="0" placeholder="2000" inputmode="numeric">
                                 </div>
                             </div>
-                            <label class="input-label">Hm− Abstieg (optional)</label>
-                            <input class="input" type="number" id="trail-hm-minus" min="0" placeholder="z.B. Downhill" inputmode="numeric">
-                            <div class="row">
-                                <div class="col">
-                                    <label class="input-label">ITRA-Punkte</label>
-                                    <select class="input select-input" id="trail-itra">
+                            <div class="field">
+                            <label class="field-label" for="trail-hm-minus">Hm− Abstieg (optional)</label>
+                            <input class="field-input" type="number" id="trail-hm-minus" min="0" placeholder="z.B. Downhill" inputmode="numeric">
+                            </div>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label class="field-label" for="trail-itra">ITRA-Punkte</label>
+                                    <select class="field-input field-select" id="trail-itra">
                                         <option value="">Keine Angabe</option>
                                         <option value="0">ITRA 0</option>
                                         <option value="1">ITRA 1</option>
@@ -188,9 +259,9 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
                                         <option value="6">ITRA 6</option>
                                     </select>
                                 </div>
-                                <div class="col">
-                                    <label class="input-label">UTMB-Index</label>
-                                    <select class="input select-input" id="trail-utmb">
+                                <div class="field">
+                                    <label class="field-label" for="trail-utmb">UTMB-Index</label>
+                                    <select class="field-input field-select" id="trail-utmb">
                                         <option value="">Keine Angabe</option>
                                         <option value="20K">UTMB 20K</option>
                                         <option value="50K">UTMB 50K</option>
@@ -199,85 +270,111 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
                                     </select>
                                 </div>
                             </div>
-                            <label class="input-label">Pflichtausrüstung</label>
-                            <div class="checkbox-group run-check-group">
+                            <div class="field">
+                            <span class="field-label">Pflichtausrüstung</span>
+                            <div class="check-stack run-check-group">
                                 <label><input type="checkbox" name="trail-gear" value="none" /> Keine</label>
                                 <label><input type="checkbox" name="trail-gear" value="basic" /> Basis</label>
                                 <label><input type="checkbox" name="trail-gear" value="extended" /> Erweitert</label>
                             </div>
-                            <label class="input-label">Gelände / Technik</label>
-                            <select class="input select-input" id="trail-terrain">
+                            </div>
+                            <div class="field">
+                            <label class="field-label" for="trail-terrain">Gelände / Technik</label>
+                            <select class="field-input field-select" id="trail-terrain">
                                 <option value="easy">Leicht (Waldwege, breite Pfade)</option>
                                 <option value="moderate">Moderat (Singletrails, Wurzeln)</option>
                                 <option value="technical">Technisch / Alpin</option>
                             </select>
+                            </div>
                         </div>
 
-                        <label class="input-label">Veranstalter-Homepage (optional)</label>
-                        <input class="input" type="url" name="event_url" placeholder="https://www.berlin-marathon.de" maxlength="255">
-
-                        <button type="button" class="login-button" id="btn-step2-next">Weiter →</button>
+                        <div class="form-actions">
+                            <button type="button" class="btn-primary" id="btn-step2b-next">Weiter</button>
+                            <button type="button" class="btn-secondary" id="btn-step2b-back">Zurück</button>
+                        </div>
+                        </div>
                     </div>
 
                     <!-- SCHRITT 3: Nur Ort -->
-                    <div id="listing-step-3" style="display: none;">
-                        <div class="heading">Veranstaltungsort</div>
-                        <p class="info-text">Wo findet das Event statt?</p>
+                    <div id="listing-step-3" class="form-step" style="display: none;">
+                        <header class="form-header">
+                            <span class="step-badge">Schritt 3 · Ort</span>
+                            <h2 class="form-title">Veranstaltungsort</h2>
+                            <p class="form-lead">Wo findet das Event statt?</p>
+                        </header>
 
-                        <label class="input-label">Straße & Hausnummer (optional)</label>
-                        <input class="input" type="text" name="street" placeholder="z.B. Unter den Linden 1" maxlength="100">
+                        <div class="form-panel">
+                        <div class="field">
+                        <label class="field-label" for="street">Straße & Hausnummer (optional)</label>
+                        <input class="field-input" type="text" id="street" name="street" placeholder="z.B. Unter den Linden 1" maxlength="100">
+                        </div>
 
-                        <div class="row">
-                            <div class="col">
-                                <label class="input-label">Postleitzahl</label>
-                                <input required class="input" type="text" id="plz" name="plz" placeholder="z. B. 10115, 1010, 75001, L-1234" maxlength="12" autocomplete="postal-code">
+                        <div class="field-row">
+                            <div class="field">
+                                <label class="field-label" for="plz">Postleitzahl</label>
+                                <input required class="field-input" type="text" id="plz" name="plz" placeholder="z. B. 10115" maxlength="12" autocomplete="postal-code">
                             </div>
-                            <div class="col">
-                                <label class="input-label">Ort des Events</label>
-                                <input required class="input" type="text" id="location" name="location" list="location-list" placeholder="Ort eingeben oder Vorschlag übernehmen" autocomplete="off">
+                            <div class="field">
+                                <label class="field-label" for="location">Ort des Events</label>
+                                <input required class="field-input" type="text" id="location" name="location" list="location-list" placeholder="Ort eingeben" autocomplete="off">
                                 <datalist id="location-list"></datalist>
                                 <p id="location-hint" class="field-hint" hidden>Ort automatisch vorgeschlagen – bitte bei Bedarf anpassen.</p>
                             </div>
                         </div>
 
-                        <button type="button" class="login-button" id="btn-step3-next">Weiter →</button>
+                        <button type="button" class="btn-primary" id="btn-step3-next">Weiter</button>
+                        </div>
                     </div>
 
                     <!-- SCHRITT 4: Preis & Bestätigung -->
-                    <div id="listing-step-4" style="display: none;">
-                        <div class="heading">Preis & Details</div>
-                        <p class="info-text">Fast geschafft! Noch Preis und Beschreibung.</p>
+                    <div id="listing-step-4" class="form-step" style="display: none;">
+                        <header class="form-header">
+                            <span class="step-badge">Schritt 4 · Veröffentlichen</span>
+                            <h2 class="form-title">Preis & Details</h2>
+                            <p class="form-lead">Fast geschafft! Noch Preis und Beschreibung.</p>
+                        </header>
 
-                        <label class="input-label">Dein Preis (in €)</label>
-                        <div class="price-input-wrapper">
-                            <input required class="input" type="number" name="price" id="price" placeholder="50" min="1" max="9999">
-                            <span class="currency-suffix">€</span>
+                        <div class="form-panel">
+                        <div class="field">
+                        <label class="field-label" for="price">Dein Preis (in €)</label>
+                        <div class="price-input-wrap">
+                            <input required class="field-input" type="number" name="price" id="price" placeholder="50" min="1" max="9999">
+                            <span class="price-suffix">€</span>
+                        </div>
+                        <div class="pill-row price-type-row">
+                            <label class="choice-pill">
+                                <input type="radio" name="price_type" value="fixed" checked />
+                                <span>Festpreis</span>
+                            </label>
+                            <label class="choice-pill">
+                                <input type="radio" name="price_type" value="vb" />
+                                <span>VB</span>
+                            </label>
+                        </div>
                         </div>
 
-                        <label class="input-label">Beschreibung (optional)</label>
+                        <div class="field">
+                        <label class="field-label" for="description">Beschreibung (optional)</label>
                         <textarea
-                            class="input"
+                            class="field-input field-textarea"
                             id="description"
                             name="description"
                             placeholder="Z.B. Startplatz inklusive Ummeldegebühr, Startblock A..."
                             rows="4"
                             maxlength="500"
-                            style="resize: none; height: auto;"
                         ></textarea>
-                        <div id="char-count" style="text-align: right; font-size: 0.75rem; color: #666; margin-top: 5px;">
-                            0 / 500 Zeichen
+                        <div id="char-count" class="char-count">0 / 500 Zeichen</div>
                         </div>
 
-                        <!-- Zusammenfassung -->
                         <div class="summary-box" id="summary-box"></div>
-                    
 
-                        <div class="checkbox-wrapper">
+                        <div class="checkbox-row confirm-row">
                             <input type="checkbox" required id="confirm-transfer">
-                            <label for="confirm-transfer">Ich bestätige, dass ich die Ummeldung vorab mit dem Veranstalter geklärt habe.</label>
+                            <label for="confirm-transfer" class="checkbox-row-label">Ich bestätige, dass ich die Ummeldung vorab mit dem Veranstalter geklärt habe.</label>
                         </div>
 
-                        <button class="login-button" type="submit" id="btn-final">Inserat jetzt veröffentlichen 🚀</button>
+                        <button class="btn-primary" type="submit" id="btn-final">Inserat jetzt veröffentlichen</button>
+                        </div>
                     </div>
 
                 </form>
@@ -287,6 +384,23 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
             </div>
         </div>
     </main>
+    <!-- Datumsauswahl (dark, wie App) -->
+    <div id="date-picker-modal" class="date-modal" hidden>
+        <div class="date-modal-backdrop" id="date-modal-backdrop"></div>
+        <div class="date-modal-panel" role="dialog" aria-modal="true" aria-labelledby="date-month-label">
+            <div class="date-modal-header">
+                <button type="button" class="date-nav" id="date-prev" aria-label="Vorheriger Monat">‹</button>
+                <span class="date-month-label" id="date-month-label"></span>
+                <button type="button" class="date-nav" id="date-next" aria-label="Nächster Monat">›</button>
+            </div>
+            <div class="date-weekdays" aria-hidden="true">
+                <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+            </div>
+            <div class="date-grid" id="date-grid"></div>
+            <button type="button" class="btn-secondary date-modal-close" id="date-modal-close">Schließen</button>
+        </div>
+    </div>
+
     <Footer />
 </Layout>
 
@@ -311,6 +425,12 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
         pickSuggestedCity,
     } from '../lib/postal-lookup';
     import { hideFeedback, showFeedbackError, showFeedbackSuccess } from '../lib/feedback-banner';
+    import {
+        LISTING_DISTANCE_OPTIONS,
+        LAUFEN_SPECIAL_DISTANCES,
+        standardDistancesForCategory,
+        type LaufenSpecial,
+    } from '../constants/listingOptions';
     import { buildTrailListing, buildUltraListing, validateTrailForm, validateUltraForm } from '../lib/runListingBuild';
     import { readTrailFormFromDom, readUltraFormFromDom, syncUltraUnitField } from '../lib/runListingFormDom';
 
@@ -331,8 +451,15 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
     const inputOtp    = document.getElementById('otp-code') as HTMLInputElement;
 
     const categorySelect  = document.getElementById('category') as HTMLSelectElement;
-    const distanceSelect  = document.getElementById('distance-select') as HTMLSelectElement;
-    const dropdownWrapper = document.getElementById('distance-dropdown-wrapper');
+    const distanceSelect  = document.getElementById('distance-select') as HTMLInputElement;
+    const distancePills = document.getElementById('distance-pills');
+    const distancePillsWrapper = document.getElementById('distance-pills-wrapper');
+    const distancePillsLabel = document.getElementById('distance-pills-label');
+    const distancePillsMuted = document.getElementById('distance-pills-muted');
+    const laufenSpecialSection = document.getElementById('laufen-special-section');
+    const btnRemoveSpecial = document.getElementById('btn-remove-special');
+    const runSpecialHeading = document.getElementById('run-special-heading');
+    const runSpecialSubtitle = document.getElementById('run-special-subtitle');
     const customSingleWrapper = document.getElementById('custom-distance-wrapper');
     const customTriWrapper    = document.getElementById('custom-triathlon-wrapper');
     const customSingleInput   = document.getElementById('custom-distance') as HTMLInputElement;
@@ -355,6 +482,18 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
 
     let lastAutoLocation: string | null = null;
     let postalLookupTimer: ReturnType<typeof setTimeout> | null = null;
+    let runSpecial: LaufenSpecial | null = null;
+
+    const RUN_SPECIAL_COPY: Record<LaufenSpecial, { title: string; subtitle: string }> = {
+        Ultra: {
+            title: 'Ultra — Details',
+            subtitle: 'Distanz oder Dauer, optional Cut-off und Untergrund.',
+        },
+        Trail: {
+            title: 'Trail — Details',
+            subtitle: 'Kilometer, Höhenmeter, Gelände und Ausrüstung.',
+        },
+    };
 
     function showError(msg: string) {
         showFeedbackError(errorDisplay, msg);
@@ -365,7 +504,7 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
 
     function readStep2Input(): ListingStep2Input {
         const category = categorySelect?.value ?? '';
-        const distance = distanceSelect?.value ?? '';
+        const distance = getDistanceValue();
         const base: ListingStep2Input = {
             category,
             eventName: (document.querySelector('[name="event_name"]') as HTMLInputElement)?.value ?? '',
@@ -401,19 +540,232 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
         activateStep(2);
     }
 
-    function goToStep(step: number) {
-        [2,3,4].forEach(s => {
+    function goToStep(step: number | '2b') {
+        const show2b = step === '2b';
+        const numericStep = step === '2b' ? 2 : step;
+
+        [2, 3, 4].forEach((s) => {
             const el = document.getElementById(`listing-step-${s}`);
-            if (el) el.style.display = s === step ? 'block' : 'none';
+            if (el) el.style.display = s === numericStep && !show2b ? 'block' : 'none';
         });
-        activateStep(step);
+
+        const step2b = document.getElementById('listing-step-2b');
+        if (step2b) step2b.style.display = show2b ? 'block' : 'none';
+
+        activateStep(show2b ? 2 : numericStep);
         hideError();
-        // Zum Anfang der Card scrollen
-        document.querySelector('.container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // Datumssperre
-    if (dateInput) dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
+    function setDistanceValue(value: string) {
+        if (distanceSelect) distanceSelect.value = value;
+    }
+
+    function getDistanceValue() {
+        return distanceSelect?.value ?? '';
+    }
+
+    function renderDistancePills(cat: string) {
+        if (!distancePills) return;
+
+        const options = cat === 'Laufen'
+            ? standardDistancesForCategory(cat)
+            : (LISTING_DISTANCE_OPTIONS[cat] ?? []);
+
+        distancePills.innerHTML = options.map((dist) => `
+            <button type="button" class="choice-pill dist-pill" data-dist="${dist}"><span>${dist}</span></button>
+        `).join('');
+
+        distancePills.querySelectorAll<HTMLButtonElement>('.dist-pill').forEach((pill) => {
+            pill.addEventListener('click', () => {
+                if (runSpecial) return;
+                const dist = pill.dataset.dist || '';
+                setDistanceValue(dist);
+                updateDistancePillState();
+                updateDistanceUI();
+            });
+        });
+
+        updateDistancePillState();
+    }
+
+    function updateDistancePillState() {
+        if (!distancePills) return;
+        const current = getDistanceValue();
+        distancePills.querySelectorAll<HTMLButtonElement>('.dist-pill').forEach((pill) => {
+            const isActive = !runSpecial && pill.dataset.dist === current;
+            pill.classList.toggle('active', isActive);
+        });
+        distancePills.classList.toggle('is-muted', !!runSpecial);
+        if (distancePillsMuted) distancePillsMuted.hidden = !runSpecial;
+    }
+
+    function updateLaufenSpecialUi() {
+        const isLaufen = categorySelect?.value === 'Laufen';
+        if (laufenSpecialSection) laufenSpecialSection.hidden = !isLaufen;
+        if (distancePillsLabel) {
+            distancePillsLabel.textContent = isLaufen ? 'Klassische Distanz *' : 'Distanz / Kategorie *';
+        }
+        document.querySelectorAll<HTMLButtonElement>('.special-row').forEach((row) => {
+            const kind = row.dataset.special as LaufenSpecial;
+            row.classList.toggle('active', runSpecial === kind);
+        });
+        if (btnRemoveSpecial) btnRemoveSpecial.hidden = !runSpecial;
+        const specialHint = document.querySelector('.laufen-special-hint') as HTMLElement | null;
+        if (specialHint) specialHint.hidden = !!runSpecial;
+    }
+
+    function clearRunSpecial() {
+        runSpecial = null;
+        if (categorySelect?.value === 'Laufen') {
+            const std = standardDistancesForCategory('Laufen');
+            setDistanceValue(std[0] || '');
+        }
+        updateLaufenSpecialUi();
+        updateDistancePillState();
+        updateDistanceUI();
+    }
+
+    function selectRunSpecial(kind: LaufenSpecial) {
+        if (runSpecial === kind) {
+            clearRunSpecial();
+            return;
+        }
+        runSpecial = kind;
+        setDistanceValue(kind);
+        updateLaufenSpecialUi();
+        updateDistancePillState();
+        updateDistanceUI();
+    }
+
+    function updateRunSpecialStepCopy() {
+        if (!runSpecial || !runSpecialHeading || !runSpecialSubtitle) return;
+        runSpecialHeading.textContent = RUN_SPECIAL_COPY[runSpecial].title;
+        runSpecialSubtitle.textContent = RUN_SPECIAL_COPY[runSpecial].subtitle;
+    }
+
+    function initEventDatePicker() {
+        const hiddenInput = dateInput;
+        const trigger = document.getElementById('event-date-trigger');
+        const display = document.getElementById('event-date-display');
+        const modal = document.getElementById('date-picker-modal');
+        const backdrop = document.getElementById('date-modal-backdrop');
+        const grid = document.getElementById('date-grid');
+        const monthLabel = document.getElementById('date-month-label');
+        const btnPrev = document.getElementById('date-prev');
+        const btnNext = document.getElementById('date-next');
+        const btnClose = document.getElementById('date-modal-close');
+
+        if (!hiddenInput || !trigger || !display || !modal || !grid || !monthLabel) return;
+
+        let viewDate = new Date();
+        viewDate.setDate(1);
+
+        const minDate = new Date();
+        minDate.setHours(0, 0, 0, 0);
+        const maxDate = new Date(minDate);
+        maxDate.setFullYear(maxDate.getFullYear() + 3);
+
+        function formatDisplay(iso: string) {
+            if (!iso) return 'Datum wählen';
+            return new Date(iso + 'T12:00:00').toLocaleDateString('de-DE', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+        }
+
+        function isoFromParts(y: number, m: number, d: number) {
+            return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        }
+
+        function renderCalendar() {
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            monthLabel.textContent = viewDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1);
+            const startWeekday = (firstDay.getDay() + 6) % 7;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            grid.innerHTML = '';
+
+            for (let i = 0; i < startWeekday; i++) {
+                const spacer = document.createElement('span');
+                spacer.className = 'date-cell is-empty';
+                grid.appendChild(spacer);
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const selectedIso = hiddenInput.value;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cellDate = new Date(year, month, day);
+                const iso = isoFromParts(year, month, day);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'date-cell';
+                btn.textContent = String(day);
+
+                const isPast = cellDate < minDate;
+                const isTooFar = cellDate > maxDate;
+                if (isPast || isTooFar) btn.classList.add('is-disabled');
+                if (iso === selectedIso) btn.classList.add('is-selected');
+                if (cellDate.getTime() === today.getTime()) btn.classList.add('is-today');
+
+                btn.addEventListener('click', () => {
+                    if (isPast || isTooFar) return;
+                    hiddenInput.value = iso;
+                    display.textContent = formatDisplay(iso);
+                    trigger.classList.add('has-value');
+                    closeModal();
+                });
+                grid.appendChild(btn);
+            }
+        }
+
+        function openModal() {
+            if (hiddenInput.value) {
+                const [y, m] = hiddenInput.value.split('-').map(Number);
+                viewDate = new Date(y, m - 1, 1);
+            } else {
+                viewDate = new Date();
+                viewDate.setDate(1);
+            }
+            modal.hidden = false;
+            document.body.classList.add('date-modal-open');
+            renderCalendar();
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+            document.body.classList.remove('date-modal-open');
+        }
+
+        trigger.addEventListener('click', openModal);
+        backdrop?.addEventListener('click', closeModal);
+        btnClose?.addEventListener('click', closeModal);
+        btnPrev?.addEventListener('click', () => {
+            viewDate.setMonth(viewDate.getMonth() - 1);
+            renderCalendar();
+        });
+        btnNext?.addEventListener('click', () => {
+            viewDate.setMonth(viewDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.hidden) closeModal();
+        });
+
+        if (hiddenInput.value) {
+            display.textContent = formatDisplay(hiddenInput.value);
+            trigger.classList.add('has-value');
+        }
+    }
+
+    initEventDatePicker();
 
     // --- AUTH LOGIK (unverändert) ---
     async function checkExistingSession() {
@@ -486,34 +838,62 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
         if (error) showError(error.message); else showListingForm();
     });
 
-    // Distanz-Dropdown befüllen wenn Sportart gewählt
-    const distances: Record<string, string[]> = {
-        Laufen:    ['5 km', '10 km', '21,1 km Halbmarathon', '42,2 km Marathon', 'Ultra', 'Trail', 'Freie Distanz'],
-        Radrennen: ['Freie Distanz'],
-        Triathlon: ['Sprint (0,75/20/5 km)', 'Olympisch (1,5/40/10 km)', '70.3 Mitteldistanz (1,9/90/21 km)', '140.6 Langdistanz (3,8/180/42 km)', 'Freie Distanz'],
-        Hyrox:     ['Open Men/Women', 'Pro Men/Women', 'Doubles', 'Relay', 'Freie Distanz']
-    };
-
     categorySelect?.addEventListener('change', () => {
-        const cat = categorySelect.value as keyof typeof distances;
-        if (distanceSelect) {
-            distanceSelect.innerHTML = '<option value="" disabled selected>Bitte wählen...</option>';
-            distances[cat]?.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d;
-                distanceSelect.appendChild(opt);
-            });
-            if (cat === 'Radrennen') { distanceSelect.value = 'Freie Distanz'; }
-            updateDistanceUI();
+        const cat = categorySelect.value;
+        runSpecial = null;
+        if (cat === 'Radrennen') {
+            setDistanceValue('Freie Distanz');
+        } else if (cat === 'Laufen') {
+            setDistanceValue(standardDistancesForCategory('Laufen')[0] || '');
+        } else {
+            const opts = LISTING_DISTANCE_OPTIONS[cat] ?? [];
+            setDistanceValue(opts[0] || '');
         }
+        renderDistancePills(cat);
+        updateLaufenSpecialUi();
+        updateDistanceUI();
     });
 
-    // --- SCHRITT 2 → 3 ---
+    document.querySelectorAll<HTMLButtonElement>('.special-row').forEach((row) => {
+        row.addEventListener('click', () => {
+            const kind = row.dataset.special as LaufenSpecial;
+            if (LAUFEN_SPECIAL_DISTANCES.includes(kind)) selectRunSpecial(kind);
+        });
+    });
+
+    btnRemoveSpecial?.addEventListener('click', clearRunSpecial);
+
+    // --- SCHRITT 2 → 2b oder 3 ---
     document.getElementById('btn-step2-next')?.addEventListener('click', () => {
         hideError();
-        const step2Error = validateListingStep2(readStep2Input());
+        const input = readStep2Input();
+        const isRunSpecial =
+            input.category === 'Laufen' &&
+            (input.distance === 'Ultra' || input.distance === 'Trail');
+        const step2Error = validateListingStep2(input, { skipRunSpecialDetails: isRunSpecial });
         if (step2Error) return showError(step2Error);
+        if (isRunSpecial) {
+            updateRunSpecialStepCopy();
+            if (ultraWrapper) ultraWrapper.hidden = input.distance !== 'Ultra';
+            if (trailWrapper) trailWrapper.hidden = input.distance !== 'Trail';
+            if (input.distance === 'Ultra') syncUltraUnitField();
+            goToStep('2b');
+            return;
+        }
         goToStep(3);
+    });
+
+    document.getElementById('btn-step2b-next')?.addEventListener('click', () => {
+        hideError();
+        const input = readStep2Input();
+        const detailError = validateListingStep2(input);
+        if (detailError) return showError(detailError);
+        goToStep(3);
+    });
+
+    document.getElementById('btn-step2b-back')?.addEventListener('click', () => {
+        hideError();
+        goToStep(2);
     });
 
     // --- SCHRITT 3 → 4: Zusammenfassung bauen ---
@@ -533,7 +913,7 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
         const eventUrl = normalizeUrl(eventUrlRaw);
         
         // 👇 HIER FEHLTE DIE VARIABLE FÜR DIE DISTANZ 👇
-        let dist = distanceSelect?.value ?? '';
+        let dist = getDistanceValue();
         const customSingle = customSingleInput?.value.trim();
         const customSwimValue = customSwim?.value.trim();
         const customBikeValue = customBike?.value.trim();
@@ -591,26 +971,19 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
     // --- DISTANZ UI LOGIK ---
     function updateDistanceUI() {
         const cat  = categorySelect?.value;
-        const dist = distanceSelect?.value;
-        if (dropdownWrapper)    dropdownWrapper.style.display    = 'block';
+        const dist = getDistanceValue();
+        if (distancePillsWrapper) distancePillsWrapper.style.display = cat === 'Radrennen' ? 'none' : 'block';
         if (customSingleWrapper) customSingleWrapper.style.display = 'none';
         if (customTriWrapper)   customTriWrapper.style.display   = 'none';
-        if (ultraWrapper) ultraWrapper.hidden = true;
-        if (trailWrapper) trailWrapper.hidden = true;
         if (customSingleInput)  customSingleInput.required = false;
         if (customSwim) customSwim.required = false;
         if (customBike) customBike.required = false;
         if (customRun)  customRun.required  = false;
+        updateLaufenSpecialUi();
 
         if (cat === 'Radrennen') {
-            if (dropdownWrapper)    dropdownWrapper.style.display    = 'none';
             if (customSingleWrapper) customSingleWrapper.style.display = 'block';
             if (customSingleInput)  customSingleInput.required = true;
-        } else if (cat === 'Laufen' && dist === 'Ultra') {
-            if (ultraWrapper) ultraWrapper.hidden = false;
-            syncUltraUnitField();
-        } else if (cat === 'Laufen' && dist === 'Trail') {
-            if (trailWrapper) trailWrapper.hidden = false;
         } else if (cat === 'Triathlon' && dist === 'Freie Distanz') {
             if (customTriWrapper) customTriWrapper.style.display = 'flex';
             if (customSwim) customSwim.required = true;
@@ -621,7 +994,6 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
             if (customSingleInput)  customSingleInput.required = true;
         }
     }
-    distanceSelect?.addEventListener('change', updateDistanceUI);
     ultraFormat?.addEventListener('change', () => {
         syncUltraUnitField();
         const label = document.getElementById('ultra-value-label');
@@ -878,6 +1250,7 @@ listingForm?.addEventListener('submit', async (e) => {
             lat: finalLat,
             lng: finalLng,
             price: parseFloat(vals.price as string),
+            price_type: vals.price_type === 'vb' ? 'vb' : 'fixed',
             approved: true,
             status: 'active'
         };
@@ -906,206 +1279,3 @@ listingForm?.addEventListener('submit', async (e) => {
         }
     }
 });
-</script>
-
-<style>
-
-    .page-wrapper {
-        min-height: 100vh;
-        background: var(--bg-body);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 120px 20px 60px;
-        color: white;
-        font-family: system-ui, sans-serif;
-    }
-
-    .container {
-        background: var(--bg-card);
-        width: 100%;
-        max-width: 550px;
-        padding: 40px;
-        border-radius: 24px;
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    }
-
-    .heading { font-size: 2rem; font-weight: 900; margin-bottom: 10px; color: white; text-align: center; }
-    .info-text { color: #888; font-size: 0.9rem; line-height: 1.5; text-align: center; margin-bottom: 30px; }
-
-    /* PROGRESS BAR */
-    .progress-bar { display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
-    .step {
-        width: 32px; height: 32px; border-radius: 50%;
-        background: var(--bg-card); border: 2px solid var(--border);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 900; color: #444;
-        transition: all 0.3s ease;
-        flex-shrink: 0;
-    }
-    .step.active { background: var(--cyan); border-color: var(--cyan); color: black; box-shadow: 0 0 15px rgba(0,188,212,0.4); }
-    .line { flex: 1; height: 2px; background: #333; margin: 0 6px; max-width: 50px; transition: background 0.3s ease; }
-    .line.active { background: var(--cyan); }
-
-    /* INPUTS */
-    .run-detail-panel {
-        margin-top: 12px;
-        padding: 16px;
-        border-radius: 14px;
-        border: 1px solid rgba(0, 188, 212, 0.25);
-        background: rgba(0, 188, 212, 0.06);
-    }
-    .run-detail-title { color: var(--cyan); font-weight: 800; font-size: 0.9rem; margin: 0 0 8px; }
-    .run-check-group { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .run-check-group label { color: #aaa; font-size: 0.85rem; display: flex; gap: 8px; align-items: flex-start; }
-
-    .input-label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; margin-top: 15px; }
-    .input { width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: white; font-size: 1rem; transition: border-color 0.3s; box-sizing: border-box; outline: none; }
-    .input:focus { border-color: var(--cyan); }
-
-    .row { display: flex; gap: 15px; }
-    .col { flex: 1; min-width: 0; }
-    @media (max-width: 480px) { .row { flex-direction: column; gap: 0; } }
-
-    .tri-dist-row {
-        margin-top: 15px;
-        gap: 12px;
-        align-items: stretch;
-    }
-
-    .tri-dist-row .col {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .tri-dist-row .input-label {
-        min-height: 2.75em;
-        margin-top: 0;
-        margin-bottom: 8px;
-        line-height: 1.3;
-        display: flex;
-        align-items: flex-end;
-    }
-
-    .tri-dist-row .input {
-        margin-top: 0;
-    }
-
-    @media (max-width: 480px) {
-        .tri-dist-row .input-label {
-            min-height: auto;
-            align-items: flex-start;
-        }
-    }
-
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-
-    .select-input {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 15px center;
-        background-size: 18px;
-        padding-right: 40px;
-    }
-
-    .login-button {
-        width: 100%; background: var(--cyan); color: black; border: none;
-        padding: 16px; border-radius: 12px; font-weight: 900; cursor: pointer;
-        transition: 0.3s; font-size: 1rem; margin-top: 25px;
-    }
-    .login-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,188,212,0.3); }
-    .login-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-    .price-input-wrapper { position: relative; }
-    .currency-suffix { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--cyan); font-weight: 900; }
-
-    .checkbox-wrapper { display: flex; gap: 10px; margin-top: 20px; font-size: 0.8rem; color: #666; align-items: flex-start; }
-    .checkbox-wrapper input { margin-top: 2px; flex-shrink: 0; accent-color: var(--cyan); }
-
-    .checkbox-group { display: flex; align-items: center; margin-top: 15px; margin-bottom: 20px; }
-    .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; margin-right: 10px; cursor: pointer; accent-color: var(--cyan); }
-    .agb-label { color: #e0e0e0; font-size: 0.95rem; cursor: pointer; }
-    .agb-link { color: var(--cyan); text-decoration: underline; font-weight: 600; }
-
-    .field-hint {
-        font-size: 0.72rem;
-        color: #666;
-        margin: 6px 0 0;
-        line-height: 1.4;
-    }
-
-    .profile { width: 100%; max-width: 400px; min-width: 300px; margin: 0 auto; box-sizing: border-box; }
-
-    textarea.input { min-height: 100px; line-height: 1.5; padding: 12px; }
-    textarea.input::-webkit-scrollbar { width: 8px; }
-    textarea.input::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-/* ZUSAMMENFASSUNG - komplett neu */
-.summary-box {
-    background: var(--bg-card);
-    border: 1px solid rgba(0, 188, 212, 0.25);
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 24px;
-}
-
-p.summary-title {
-    font-size: 0.75rem !important;
-    font-weight: 800 !important;
-    color: #00bcd4 !important;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin: 0 0 16px 0;
-}
-
-.summary-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0 !important;
-}
-
-.summary-item {
-    display: grid !important;
-    grid-template-columns: 110px 1fr !important;
-    align-items: baseline;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    background: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-top: none !important;
-    border-radius: 0 !important;
-}
-
-.summary-item:last-child {
-    border-bottom: none;
-}
-
-.summary-label {
-    font-size: 0.7rem !important;
-    color: #00bcd4 !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0 !important;
-}
-
-.summary-val {
-    font-size: 0.9rem !important;
-    color: #aaaaaa !important;
-    font-weight: 400 !important;
-    word-break: break-word;
-}
-
-.summary-link {
-    color: #00bcd4 !important;
-    text-decoration: none;
-}
-.summary-link:hover {
-    text-decoration: underline;
-}
-</style>

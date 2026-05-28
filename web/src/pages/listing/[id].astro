@@ -52,6 +52,96 @@ const runProfileDetail = item ? formatRunMetaDetail({
   elevation_gain_m: item.elevation_gain_m,
   elevation_loss_m: item.elevation_loss_m,
 }) : null;
+const eventHost = item?.event_url
+  ? (() => {
+      try {
+        return new URL(item.event_url).hostname.replace(/^www\./, '');
+      } catch {
+        return item.event_url;
+      }
+    })()
+  : null;
+
+type EventFact = {
+  key: string;
+  label: string;
+  value: string;
+  href?: string;
+  multiline?: boolean;
+};
+
+function buildEventFacts(listing: NonNullable<typeof item>): EventFact[] {
+  const facts: EventFact[] = [];
+
+  facts.push({
+    key: 'date',
+    label: 'Datum',
+    value: new Date(listing.event_date).toLocaleDateString('de-DE', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+  });
+
+  const locationParts: string[] = [];
+  if (listing.street?.trim()) locationParts.push(listing.street.trim());
+  const cityLine = [listing.plz, listing.location].filter(Boolean).join(' ').trim();
+  if (cityLine) locationParts.push(cityLine);
+  if (locationParts.length) {
+    facts.push({ key: 'location', label: 'Ort', value: locationParts.join(', ') });
+  }
+
+  const triSplit =
+    listing.category === 'Triathlon' &&
+    (listing.swim_dist != null || listing.bike_dist != null || listing.run_dist != null);
+
+  if (triSplit) {
+    if (listing.distance && listing.distance !== 'Freie Distanz') {
+      facts.push({ key: 'distance', label: 'Format', value: listing.distance });
+    }
+    if (listing.swim_dist != null) {
+      facts.push({ key: 'swim', label: 'Schwimmen', value: `${listing.swim_dist} km` });
+    }
+    if (listing.bike_dist != null) {
+      facts.push({ key: 'bike', label: 'Rad', value: `${listing.bike_dist} km` });
+    }
+    if (listing.run_dist != null) {
+      facts.push({ key: 'run', label: 'Laufen', value: `${listing.run_dist} km` });
+    }
+  } else {
+    facts.push({ key: 'distance', label: 'Distanz', value: distanceLabel });
+  }
+
+  if (runProfileDetail) {
+    facts.push({
+      key: 'profile',
+      label: 'Streckenprofil',
+      value: runProfileDetail,
+      multiline: true,
+    });
+  } else if (listing.elevation_gain_m != null || listing.elevation_loss_m != null) {
+    const elev: string[] = [];
+    if (listing.elevation_gain_m != null) elev.push(`+${listing.elevation_gain_m} hm`);
+    if (listing.elevation_loss_m != null) elev.push(`−${listing.elevation_loss_m} hm`);
+    facts.push({ key: 'elevation', label: 'Höhenmeter', value: elev.join(' · ') });
+  }
+
+  if (listing.event_url) {
+    facts.push({
+      key: 'website',
+      label: 'Event-Website',
+      value: eventHost ?? listing.event_url,
+      href: listing.event_url,
+    });
+  }
+
+  return facts;
+}
+
+const eventFacts = item ? buildEventFacts(item) : [];
+const priceTypeLabel = item?.price_type === 'vb' ? 'Verhandlungsbasis' : 'Festpreis';
+
 const seoDescription = item 
   ? `Sichere dir jetzt einen Startplatz für ${item.event_name} am ${new Date(item.event_date).toLocaleDateString('de-DE')} in ${item.location}. Preis: ${item.price}€. Sicherer Kauf via Startplatzbörse.`
   : "Details zum Startplatz auf der Startplatzbörse.";
@@ -78,9 +168,8 @@ const seoDescription = item
                 </div>
             ) : (
                 <div class="listing-layout">
-                    
-                    <div class="content-side">
-                        <div class="header-actions">
+                    <section class="hero-card">
+                        <div class="hero-top">
                             <span class="badge">{item.category}</span>
                             <div class="header-actions-right">
                                 <button
@@ -95,91 +184,137 @@ const seoDescription = item
                                     </svg>
                                 </button>
                                 <button id="share-btn" class="share-btn" aria-label="Inserat teilen">
-                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                                Teilen
-                            </button>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                    Teilen
+                                </button>
                             </div>
                         </div>
-
                         <h1 class="glow-title">{item.event_name}</h1>
-                        
-                        <div class="price-section mobile-only">
-                             <span class="main-price">{item.price}€</span>
-                             {item.old_price && <span class="old-price">{item.old_price}€</span>}
+
+                        <ul class="event-facts">
+                            {eventFacts.map((fact) => (
+                                <li class="event-fact">
+                                    <span class="fact-icon" aria-hidden="true">
+                                        {fact.key === 'date' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 0121 11.25v7.5" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'location' && (
+                                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'distance' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'elevation' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 20l9-16 9 16H3z" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'profile' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'swim' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12c2.25-2.25 4.5-2.25 6.75 0s4.5 2.25 6.75 0 4.5-2.25 6.75 0M2.25 17c2.25-2.25 4.5-2.25 6.75 0s4.5 2.25 6.75 0 4.5-2.25 6.75 0" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'bike' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <circle cx="5.5" cy="17.5" r="2.5" /><circle cx="18.5" cy="17.5" r="2.5" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 17.5h2l2.5-7h4l1.5 4H18" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'run' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l2 2m-8 9.5a3.5 3.5 0 117 0 3.5 3.5 0 01-7 0zM6.5 20.5l2-4.5 3 1 2.5-3" />
+                                            </svg>
+                                        )}
+                                        {fact.key === 'website' && (
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253" />
+                                            </svg>
+                                        )}
+                                    </span>
+                                    <div class="fact-copy">
+                                        <span class="fact-label">{fact.label}</span>
+                                        {fact.href ? (
+                                            <a class="fact-value fact-link" href={fact.href} target="_blank" rel="noopener noreferrer">
+                                                {fact.value}
+                                            </a>
+                                        ) : fact.multiline ? (
+                                            <span class="fact-value fact-multiline">{fact.value}</span>
+                                        ) : (
+                                            <span class="fact-value">{fact.value}</span>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+
+                    <div class="detail-lower-grid">
+                        <div class="info-stack">
+                            <div class="card price-card">
+                                <span class="label">Preis</span>
+                                <div class="price-display">
+                                    <span class="main-price">{item.price}€</span>
+                                    {item.old_price && <span class="old-price">{item.old_price}€</span>}
+                                </div>
+                                <p class="price-note">{priceTypeLabel}</p>
+
+                                <div class="meta-list">
+                                    <div class="meta-row">
+                                        <span class="meta-key">Angebot</span>
+                                        <span class="meta-value">Startplatz</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card description-box">
+                                <span class="label">Zusatzinfos</span>
+                                <p>{item.description || 'Keine weiteren Details vom Verkäufer hinterlegt.'}</p>
+                            </div>
                         </div>
 
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <span class="label">Datum</span>
-                                <span class="val">{new Date(item.event_date).toLocaleDateString('de-DE')}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">Ort</span>
-                                <span class="val">{item.location} {item.plz ? `(${item.plz})` : ''}</span>
-                            </div>
-                            {item.event_url && (
-                                <div class="info-item">
-                                    <span class="label">Website</span>
-                                    <span class="val"><a href={item.event_url} target="_blank" rel="noopener noreferrer">{item.event_url}</a></span>
+                        <aside class="sidebar">
+                            {seller && (
+                                <div class="card seller-card-block">
+                                    <div class="seller-avatar-wrap">
+                                        {seller.avatar_url
+                                            ? <img src={seller.avatar_url} alt={seller.nickname ?? 'Verkäufer'} />
+                                            : <span>👤</span>
+                                        }
+                                    </div>
+                                    <div class="seller-info">
+                                        <p class="seller-name">{seller.nickname || 'Anonym'}</p>
+                                        {memberSince && <p class="seller-meta">Mitglied seit {memberSince}</p>}
+                                    </div>
                                 </div>
                             )}
-                            <div class="info-item">
-                                <span class="label">Distanz</span>
-                                <span class="val">{distanceLabel}</span>
-                            </div>
-                            {runProfileDetail && (
-                                <div class="info-item info-item-full">
-                                    <span class="label">Streckenprofil</span>
-                                    <span class="val val-multiline">{runProfileDetail}</span>
-                                </div>
-                            )}
-                        </div>
 
-                        <div class="price-section desktop-only">
-                            <div class="price-display">
-                                {item.old_price && <span class="old-price">{item.old_price}€</span>}
-                                <span class="main-price">{item.price}€</span>
-                            </div>
-                        </div>
+                            <div class="card contact-card">
+                                <h3>Verkäufer kontaktieren</h3>
+                                <p>Sende eine Nachricht, um Details oder die Übergabe zu klären.</p>
 
-                        <div class="description-box">
-                            <span class="label">Zusatzinfos</span>
-                            <p>{item.description || 'Keine weiteren Details vom Verkäufer hinterlegt.'}</p>
-                        </div>
+                                <form id="contact-form">
+                                    <input type="hidden" name="listing_id" value={item.id}>
+                                    <input type="hidden" name="seller_id" value={item.user_id}>
+
+                                    <textarea name="message" placeholder="Hallo, ich interessiere mich für deinen Startplatz ..." class="input-field textarea" required></textarea>
+
+                                    <button type="submit" class="btn-cyan-glow" id="send-btn">Nachricht senden</button>
+                                </form>
+                                <p class="login-hint">🔒 Sicherer Chat via Startplatzbörse</p>
+                            </div>
+                        </aside>
                     </div>
-
-                    <aside class="sidebar">
-
-                        {seller && (
-                            <div class="card seller-card-block">
-                                <div class="seller-avatar-wrap">
-                                    {seller.avatar_url
-                                        ? <img src={seller.avatar_url} alt={seller.nickname ?? 'Verkäufer'} />
-                                        : <span>👤</span>
-                                    }
-                                </div>
-                                <div class="seller-info">
-                                    <p class="seller-name">{seller.nickname || 'Anonym'}</p>
-                                    {memberSince && <p class="seller-meta">Mitglied seit {memberSince}</p>}
-                                </div>
-                            </div>
-                        )}
-
-                        <div class="card contact-card">
-                            <h3>Verkäufer kontaktieren</h3>
-                            <p>Sende eine Nachricht, um Details oder die Übergabe zu klären.</p>
-                            
-                            <form id="contact-form">
-                                <input type="hidden" name="listing_id" value={item.id}>
-                                <input type="hidden" name="seller_id" value={item.user_id}>
-                                
-                                <textarea name="message" placeholder="Hallo, ich habe Interesse an deinem Startplatz..." class="input-field textarea" required></textarea>
-                                
-                                <button type="submit" class="btn-cyan-glow" id="send-btn">Nachricht senden</button>
-                            </form>
-                            <p class="login-hint">🔒 Sicherer Chat via Startplatzbörse</p>
-                        </div>
-                    </aside>
                 </div>
             )}
         </div>
@@ -322,113 +457,191 @@ const seoDescription = item
 </script>
 
 <style>
-    .header-actions { 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        margin-bottom: 5px;
+    .listing-page { background: var(--bg-body); min-height: 100vh; padding: 100px 15px 60px; color: white; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .listing-layout { display: grid; gap: 14px; margin-top: 16px; }
+
+    .hero-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .hero-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    }
+
+    .hero-card::after {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -30px;
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, rgba(0, 188, 212, 0.14) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .hero-top {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
     }
 
     .header-actions-right {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
-    .heart-btn {
-        background: var(--bg-card);
+    .badge {
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--cyan);
+        background: rgba(0, 188, 212, 0.12);
+        border: 1px solid rgba(0, 188, 212, 0.35);
+    }
+
+    .heart-btn,
+    .share-btn {
+        position: relative;
+        z-index: 1;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: var(--radius-sm);
-        width: 40px;
-        height: 40px;
+        background: var(--bg-body);
+        color: #dbe7ea;
+        border-radius: 12px;
+        height: 36px;
         cursor: pointer;
-        padding: 0;
-        color: #e2e8f0;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
     }
 
-    .heart-icon { width: 18px; height: 18px; }
-    .heart-btn:hover { color: #e53935; border-color: #e53935; }
-    .heart-btn.is-saved { color: #e53935; border-color: #e53935; }
+    .heart-btn { width: 36px; padding: 0; }
+    .share-btn { gap: 6px; padding: 0 10px; font-size: 0.74rem; font-weight: 800; }
+    .heart-icon { width: 17px; height: 17px; }
+    .heart-btn:hover { color: var(--cyan); border-color: rgba(0, 188, 212, 0.7); }
+    .heart-btn.is-saved { color: var(--cyan); border-color: var(--cyan); }
     .heart-btn.is-saved .heart-icon { fill: currentColor; }
     .heart-btn:disabled { opacity: 0.5; cursor: wait; }
+    .share-btn:hover { color: var(--cyan); border-color: rgba(0, 188, 212, 0.7); }
 
-    .share-btn { 
-        background: var(--bg-card); 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
-        color: #cbd5e1; 
-        padding: 8px 12px; 
-        border-radius: var(--radius-sm); 
-        font-size: 0.75rem; 
-        font-weight: 800;
-        cursor: pointer; 
-        display: flex; 
-        align-items: center; 
-        gap: 6px; 
-        transition: all 0.2s ease; 
-    }
-    .share-btn:hover { 
-        color: var(--cyan); 
-        border-color: rgba(0, 188, 212, 0.45); 
-        background: rgba(0, 188, 212, 0.12);
+    .glow-title {
+        position: relative;
+        z-index: 1;
+        font-size: clamp(1.9rem, 3.4vw, 3rem);
+        font-weight: 900;
+        margin: 12px 0 14px;
+        line-height: 1.1;
+        color: #ffffff;
     }
 
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-
-    .listing-page { background: var(--bg-body); min-height: 100vh; padding: 100px 15px 60px; color: white; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .listing-layout { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; }
-    
-    @media (min-width: 992px) {
-        .listing-layout { grid-template-columns: 1fr 380px; gap: 60px; }
-        .listing-page { padding: 160px 20px 80px; }
-    }
-
-    .glow-title { font-size: 2.2rem; font-weight: 900; margin: 10px 0; line-height: 1.1; }
-    @media (min-width: 768px) { .glow-title { font-size: 3.5rem; } }
-
-    .badge { color: var(--cyan); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.7rem; }
-    
-    .info-grid {
+    .event-facts {
+        position: relative;
+        z-index: 1;
+        list-style: none;
+        margin: 0;
+        padding: 0;
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
-        margin: 16px 0;
-        padding: 16px;
-        background: var(--bg-card);
-        border-radius: var(--radius-card);
+        grid-template-columns: 1fr;
+        gap: 10px;
     }
-    @media (min-width: 768px) { .info-grid { display: flex; flex-wrap: wrap; gap: 24px 40px; } }
 
-    .label { color: #888; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;}
-    .val { font-size: 1rem; font-weight: 700; }
-    .info-item-full { width: 100%; }
-    .val-multiline { white-space: pre-line; font-size: 0.95rem; line-height: 1.45; color: #ccc; }
-
-    .price-section { margin: 15px 0; display: flex; align-items: baseline; gap: 15px; }
-    .main-price { font-size: 2.5rem; font-weight: 900; color: var(--cyan); }
-    .old-price { font-size: 1.2rem; color: #333; text-decoration: line-through; }
-
-    .mobile-only { display: flex; }
-    .desktop-only { display: none; }
-    @media (min-width: 992px) { .mobile-only { display: none; } .desktop-only { display: flex; } .main-price { font-size: 3.5rem; } }
-
-    .description-box {
-        margin: 0 0 16px;
-        padding: 16px;
-        background: var(--bg-card);
-        border-radius: var(--radius-card);
-        line-height: 1.6;
-        color: #bbb;
+    @media (min-width: 640px) {
+        .event-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    .description-box p { margin: 8px 0 0; font-size: 0.95rem; line-height: 1.55; }
 
-    .sidebar { display: flex; flex-direction: column; gap: 12px; }
+    .event-fact {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    @media (min-width: 640px) {
+        .event-fact:has(.fact-multiline) { grid-column: 1 / -1; }
+    }
+
+    .fact-icon {
+        flex-shrink: 0;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--cyan);
+        background: rgba(0, 188, 212, 0.1);
+        border: 1px solid rgba(0, 188, 212, 0.2);
+    }
+
+    .fact-icon svg { width: 17px; height: 17px; }
+
+    .fact-copy { min-width: 0; flex: 1; text-align: left; }
+
+    .fact-label {
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #777;
+        margin-bottom: 2px;
+    }
+
+    .fact-value {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #e8e8e8;
+        line-height: 1.4;
+        text-align: left;
+    }
+
+    .fact-multiline { white-space: pre-line; font-weight: 600; color: #c8c8c8; }
+
+    .fact-link {
+        color: var(--cyan);
+        text-decoration: none;
+    }
+
+    .fact-link:hover { text-decoration: underline; }
+
+    .detail-lower-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+    }
+
+    .info-stack,
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
     .card {
         background: var(--bg-card);
@@ -436,19 +649,55 @@ const seoDescription = item
         border-radius: var(--radius-card);
         padding: 16px;
     }
-    .contact-card h3 { margin-bottom: 8px; font-weight: 800; font-size: 1.2rem; }
-    .contact-card p { color: #666; font-size: 0.85rem; margin-bottom: 20px; }
-    .login-hint { font-size: 0.7rem; text-align: center; margin-top: 15px; color: #333; font-weight: 600; }
 
-    /* Verkäufer-Block */
+    .label {
+        color: #7b7b7b;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .price-card .price-display {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        margin-bottom: 2px;
+    }
+
+    .main-price { font-size: clamp(2.1rem, 4vw, 3rem); font-weight: 900; line-height: 1; color: var(--cyan); }
+    .old-price { font-size: 1.05rem; color: #5f5f5f; text-decoration: line-through; margin-bottom: 6px; }
+    .price-note { margin: 0 0 14px; color: #8a8a8a; font-size: 0.84rem; }
+
+    .meta-list {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .meta-key { color: #8a8a8a; font-size: 0.82rem; }
+    .meta-value { color: #d3d3d3; font-size: 0.9rem; font-weight: 600; }
+    .description-box p { margin: 8px 0 0; font-size: 0.93rem; line-height: 1.55; color: #bdbdbd; }
+
     .seller-card-block {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
     }
     .seller-avatar-wrap {
-        width: 52px;
-        height: 52px;
+        width: 50px;
+        height: 50px;
         border-radius: 14px;
         flex-shrink: 0;
         overflow: hidden;
@@ -456,7 +705,7 @@ const seoDescription = item
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.45rem;
         border: 2px solid rgba(255, 255, 255, 0.08);
     }
     .seller-avatar-wrap img {
@@ -472,30 +721,81 @@ const seoDescription = item
         margin: 0 0 3px;
     }
     .seller-meta {
-        font-size: 0.7rem;
-        color: #555;
+        font-size: 0.72rem;
+        color: #696969;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.05em;
         margin: 0;
     }
+
+    .contact-card h3 { margin: 0 0 6px; font-weight: 800; font-size: 1.25rem; }
+    .contact-card p { color: #8b8b8b; font-size: 0.86rem; margin: 0 0 16px; }
 
     .input-field {
         width: 100%;
         background: var(--bg-body);
-        border: 2px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         padding: 14px;
         border-radius: var(--radius-sm);
         color: white;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         font-family: inherit;
         font-size: 1rem;
     }
-    .textarea { height: 110px; resize: none; }
-    
-    .btn-cyan-glow { width: 100%; background: var(--cyan); color: black; border: none; padding: 16px; border-radius: 14px; font-weight: 900; cursor: pointer; transition: 0.3s; font-size: 1rem; }
-    .btn-cyan-glow:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 188, 212, 0.2); }
+    .textarea { height: 104px; resize: none; }
 
-    .back-link { background: transparent; border: none; color: #00bcd4; text-decoration: none; font-weight: 700; font-size: 0.8rem; margin-bottom: 15px; display: inline-block; cursor: pointer; padding: 0; transition: color 0.3s ease; }
+    .btn-cyan-glow {
+        width: 100%;
+        background: var(--cyan);
+        color: #041014;
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.25s;
+        font-size: 1rem;
+    }
+    .btn-cyan-glow:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 188, 212, 0.22); }
+
+    .login-hint {
+        font-size: 0.72rem;
+        text-align: center;
+        margin: 12px 0 0;
+        color: #676767;
+        font-weight: 600;
+    }
+
+    .back-link {
+        background: transparent;
+        border: none;
+        color: #00bcd4;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        display: inline-block;
+        cursor: pointer;
+        padding: 0;
+        transition: color 0.3s ease;
+    }
     .back-link:hover { color: white; }
+
+    @media (min-width: 900px) {
+        .listing-page { padding: 155px 20px 80px; }
+        .hero-card { padding: 20px 22px; }
+        .detail-lower-grid { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+        .sidebar { position: sticky; top: 120px; }
+    }
+
+    @media (max-width: 640px) {
+        .listing-page { padding: 94px 12px 50px; }
+        .share-btn { width: 36px; padding: 0; }
+        .share-btn svg { width: 16px; height: 16px; }
+        .share-btn { font-size: 0; }
+        .hero-card { border-radius: 16px; padding: 14px; }
+        .glow-title { font-size: 1.85rem; margin: 10px 0 12px; }
+        .event-facts { grid-template-columns: 1fr; }
+    }
 </style>

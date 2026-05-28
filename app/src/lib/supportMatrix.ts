@@ -147,7 +147,10 @@ export async function fetchTicketMatrixRoomId(ticketId: string): Promise<string 
   return data?.matrix_room_id?.trim() || null;
 }
 
-/** Ruft support-notify-matrix auf (DB-Trigger per Vault oft optional). */
+/**
+ * Wartet auf den DB-Trigger (support_messages_notify_matrix).
+ * Ruft support-notify-matrix nur einmal als Fallback auf — verhindert doppelte Matrix-Räume.
+ */
 export async function forwardSupportMessageToMatrix(
   record: SupportMessageRecord,
 ): Promise<NotifyResult> {
@@ -156,23 +159,22 @@ export async function forwardSupportMessageToMatrix(
     return { ok: true, matrixEventId: record.matrix_event_id, matrixRoomId: roomId };
   }
 
-  let result = await notifySupportMessageToMatrix(record);
-  if (result.matrixEventId) {
-    return result;
-  }
-
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 12; i++) {
     await sleep(MATRIX_POLL_MS);
     const eventId = await fetchMatrixEventId(record.id);
     if (eventId) {
       const roomId = await fetchTicketMatrixRoomId(record.ticket_id);
       return { ok: true, matrixEventId: eventId, matrixRoomId: roomId };
     }
+    const dbError = await fetchMatrixForwardError(record.id);
+    if (dbError) {
+      return { ok: false, error: dbError };
+    }
   }
 
-  result = await notifySupportMessageToMatrix(record);
-  if (result.matrixEventId) {
-    return result;
+  const fallback = await notifySupportMessageToMatrix(record);
+  if (fallback.matrixEventId) {
+    return fallback;
   }
 
   const eventId = await fetchMatrixEventId(record.id);
@@ -188,17 +190,14 @@ export async function forwardSupportMessageToMatrix(
       ok: false,
       error:
         dbError ??
-        'Matrix-Raum wurde angelegt, aber die Nachricht konnte nicht gesendet werden. Bitte im SQL-Log prüfen.',
+        'Matrix-Raum wurde angelegt, aber die Nachricht konnte nicht gesendet werden.',
       matrixRoomId: roomId,
     };
   }
 
   return {
     ok: false,
-    error:
-      dbError ??
-      result.error ??
-      'Kein Matrix-Raum. Prüfe Vault-Secrets (supabase_project_url, supabase_service_role_key) und Edge-Function-Logs.',
+    error: dbError ?? fallback.error ?? 'Matrix-Weiterleitung fehlgeschlagen.',
   };
 }
 

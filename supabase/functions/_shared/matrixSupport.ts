@@ -371,9 +371,26 @@ export async function ensureTicketMatrixRoom(
   ticket: TicketRow,
   meta: { nickname: string; userEmail: string },
 ): Promise<{ roomId: string; created: boolean }> {
-  if (ticket.matrix_room_id?.trim()) {
-    await ensureBotInRoom(config, ticket.matrix_room_id);
-    return { roomId: ticket.matrix_room_id, created: false };
+  const existing = ticket.matrix_room_id?.trim();
+  if (existing) {
+    await ensureBotInRoom(config, existing);
+    return { roomId: existing, created: false };
+  }
+
+  const { data: freshTicket, error: freshError } = await supabase
+    .from('support_tickets')
+    .select('id, user_id, subject, status, matrix_room_id')
+    .eq('id', ticket.id)
+    .single();
+
+  if (freshError) {
+    throw new Error(`Ticket neu laden: ${freshError.message}`);
+  }
+
+  const freshRoomId = freshTicket?.matrix_room_id?.trim();
+  if (freshRoomId) {
+    await ensureBotInRoom(config, freshRoomId);
+    return { roomId: freshRoomId, created: false };
   }
 
   const ticketRef = formatTicketRef(ticket.id);
@@ -385,13 +402,31 @@ export async function ensureTicketMatrixRoom(
     subject: ticket.subject,
   });
 
-  const { error } = await supabase
+  const { data: claimed, error } = await supabase
     .from('support_tickets')
     .update({ matrix_room_id: roomId })
-    .eq('id', ticket.id);
+    .eq('id', ticket.id)
+    .is('matrix_room_id', null)
+    .select('matrix_room_id')
+    .maybeSingle();
 
   if (error) {
     throw new Error(`matrix_room_id speichern: ${error.message}`);
+  }
+
+  if (!claimed) {
+    const { data: winner, error: winnerError } = await supabase
+      .from('support_tickets')
+      .select('matrix_room_id')
+      .eq('id', ticket.id)
+      .single();
+
+    if (winnerError || !winner?.matrix_room_id?.trim()) {
+      throw new Error('Matrix-Raum konnte nicht zugewiesen werden (Race).');
+    }
+
+    await ensureBotInRoom(config, winner.matrix_room_id);
+    return { roomId: winner.matrix_room_id, created: false };
   }
 
   await notifyNewSupportRoom(config, {

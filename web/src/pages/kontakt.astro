@@ -1,47 +1,75 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Footer from '../components/Footer.astro';
+import SupportChatPanel from '../components/SupportChatPanel.astro';
 ---
 
-<Layout title="Kontakt ">
+<Layout title="Kontakt | Startplatzbörse">
     <main class="page-wrapper">
-        
         <div class="form-wrapper">
             <div class="container">
-                
-                <div class="heading">Schreib mir</div>
-                
+                <div class="heading">Kontakt</div>
+
                 <p class="info-text">
-                    Hast du Fragen zur Plattform, einen Bug gefunden oder Feedback? 
-                    Als Ein-Mann-Projekt freue ich mich über jede Nachricht.
+                    Hast du Fragen zur Plattform, einen Bug gefunden oder Feedback?
+                    Wähle, wie du uns erreichen möchtest – per Formular oder im Live-Chat.
                 </p>
-                
-                <form action="https://api.web3forms.com/submit" method="POST" class="form" id="contact-form">
 
-                    <input type="hidden" name="access_key" value="e69583c0-8243-43fb-a59d-1f81a16ed571">
-                    
-                    <input type="hidden" name="from_name" value="Startplatzboerse Kontakt">
-                    
-                    <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+                <div class="contact-mode-switch" role="tablist" aria-label="Kontaktart wählen">
+                    <button
+                        type="button"
+                        class="mode-btn active"
+                        id="mode-form"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="panel-form"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M4 4h16v16H4zM22 6l-10 7L2 6" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Formular
+                    </button>
+                    <button
+                        type="button"
+                        class="mode-btn"
+                        id="mode-chat"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panel-chat"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Support-Chat
+                    </button>
+                </div>
 
-                    <input required class="input" type="text" name="name" placeholder="Dein Name">
-                    <input required class="input" type="email" name="email" placeholder="Deine E-Mail Adresse">
-                    
-                    <input required class="input" type="text" name="subject" placeholder="Betreff">
-                    
-                    <textarea required class="input textarea" name="message" rows="5" placeholder="Deine Nachricht..."></textarea>
-                    
-                    <button class="login-button" type="submit" id="submit-btn">Nachricht senden</button>
+                <div id="panel-form" class="contact-panel" role="tabpanel">
+                    <p class="panel-hint">Schreib uns eine E-Mail über das Formular – auch ohne Konto.</p>
 
-                    <p id="result" style="display:none; text-align: center; margin-top: 20px; font-weight: bold;"></p>
+                    <form action="https://api.web3forms.com/submit" method="POST" class="form" id="contact-form">
+                        <input type="hidden" name="access_key" value="e69583c0-8243-43fb-a59d-1f81a16ed571">
+                        <input type="hidden" name="from_name" value="Startplatzboerse Kontakt">
+                        <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
 
-                </form>
+                        <input required class="input" type="text" name="name" placeholder="Dein Name">
+                        <input required class="input" type="email" name="email" placeholder="Deine E-Mail Adresse">
+                        <input required class="input" type="text" name="subject" placeholder="Betreff">
+                        <textarea required class="input textarea" name="message" rows="5" placeholder="Deine Nachricht..."></textarea>
 
+                        <button class="login-button" type="submit" id="submit-btn">Nachricht senden</button>
+                        <p id="result" class="form-result" style="display:none;"></p>
+                    </form>
+                </div>
+
+                <div id="panel-chat" class="contact-panel" role="tabpanel" hidden>
+                    <p class="panel-hint">Live-Chat mit dem Team – wie in der App. Anmeldung erforderlich.</p>
+                    <SupportChatPanel />
+                </div>
             </div>
         </div>
-
     </main>
-    
+
     <Footer />
 </Layout>
 
@@ -51,18 +79,17 @@ import Footer from '../components/Footer.astro';
     const btn = document.getElementById('submit-btn');
 
     form.addEventListener('submit', function(e) {
-        e.preventDefault(); // Verhindert das Neuladen der Seite
-        
+        e.preventDefault();
+
         const formData = new FormData(form);
         const object = Object.fromEntries(formData);
         const json = JSON.stringify(object);
 
-        // UI Update: Button sperren & Text ändern
-        result.innerHTML = "Einen Moment...";
-        result.style.display = "block";
-        result.style.color = "#999";
+        result.innerHTML = 'Einen Moment...';
+        result.style.display = 'block';
+        result.style.color = '#999';
         btn.disabled = true;
-        btn.innerHTML = "Sende...";
+        btn.innerHTML = 'Sende...';
 
         fetch('https://api.web3forms.com/submit', {
             method: 'POST',
@@ -74,37 +101,86 @@ import Footer from '../components/Footer.astro';
         })
         .then(async (response) => {
             if (response.status == 200) {
-                // Erfolg
-                result.innerHTML = "Danke! Deine Nachricht wurde gesendet.";
-                result.style.color = "var(--cyan)";
-                btn.innerHTML = "Gesendet ✓";
-                form.reset(); // Formular leeren
+                result.innerHTML = 'Danke! Deine Nachricht wurde gesendet.';
+                result.style.color = 'var(--cyan)';
+                btn.innerHTML = 'Gesendet ✓';
+                form.reset();
             } else {
-                // Fehler von Web3Forms
-                console.log(response);
-                result.innerHTML = "Ups, da lief was schief.";
-                result.style.color = "#ff4444";
+                result.innerHTML = 'Ups, da lief was schief.';
+                result.style.color = '#ff4444';
                 btn.disabled = false;
-                btn.innerHTML = "Nachricht senden";
+                btn.innerHTML = 'Nachricht senden';
             }
         })
-        .catch(error => {
-            // Netzwerkfehler
-            console.log(error);
-            result.innerHTML = "Verbindungsfehler.";
-            result.style.color = "#ff4444";
+        .catch(() => {
+            result.innerHTML = 'Verbindungsfehler.';
+            result.style.color = '#ff4444';
             btn.disabled = false;
-            btn.innerHTML = "Nachricht senden";
+            btn.innerHTML = 'Nachricht senden';
         })
         .then(function() {
-            // Nach 5 Sekunden die Meldung wieder ausblenden und Button resetten
             setTimeout(() => {
-                result.style.display = "none";
+                result.style.display = 'none';
                 btn.disabled = false;
-                btn.innerHTML = "Nachricht senden";
+                btn.innerHTML = 'Nachricht senden';
             }, 5000);
         });
     });
+</script>
+
+<script>
+    type SupportApi = {
+        setActive: (active: boolean) => void;
+        refreshChat: () => Promise<void>;
+    };
+
+    let supportApi: SupportApi | null = null;
+
+    const modeForm = document.getElementById('mode-form');
+    const modeChat = document.getElementById('mode-chat');
+    const panelForm = document.getElementById('panel-form');
+    const panelChat = document.getElementById('panel-chat');
+
+    function prefersChatTab() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('mode') === 'chat' || sessionStorage.getItem('kontakt_support_chat') === '1';
+    }
+
+    function setMode(mode: 'form' | 'chat') {
+        const isForm = mode === 'form';
+        modeForm?.classList.toggle('active', isForm);
+        modeChat?.classList.toggle('active', !isForm);
+        modeForm?.setAttribute('aria-selected', isForm ? 'true' : 'false');
+        modeChat?.setAttribute('aria-selected', !isForm ? 'true' : 'false');
+
+        if (panelForm) panelForm.hidden = !isForm;
+        if (panelChat) panelChat.hidden = isForm;
+
+        if (!isForm) {
+            sessionStorage.setItem('kontakt_support_chat', '1');
+        }
+
+        supportApi?.setActive(!isForm);
+    }
+
+    function syncKontaktMode() {
+        if (prefersChatTab()) {
+            setMode('chat');
+        } else {
+            supportApi?.setActive(false);
+        }
+    }
+
+    modeForm?.addEventListener('click', () => setMode('form'));
+    modeChat?.addEventListener('click', () => setMode('chat'));
+
+    document.addEventListener('support-chat-ready', (event) => {
+        supportApi = (event as CustomEvent).detail.api as SupportApi;
+        syncKontaktMode();
+    });
+
+    document.addEventListener('support-chat-back', () => setMode('form'));
+
 </script>
 
 <style>
@@ -114,67 +190,155 @@ import Footer from '../components/Footer.astro';
         flex-direction: column;
         justify-content: center;
         padding-top: 100px;
+        padding-bottom: 40px;
         background: var(--bg-body);
     }
 
     .form-wrapper {
-        display: flex; justify-content: center; padding: 20px;
-        flex: 1; align-items: center;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        flex: 1;
+        align-items: center;
     }
 
-    /* Container Design */
     .container {
-        max-width: 500px;
+        max-width: 540px;
         width: 100%;
         background: var(--bg-card);
         border-radius: 30px;
         padding: 40px 35px;
-        border: 1px solid rgba(255,255,255,0.08); 
-        box-shadow: 0 30px 60px rgba(0,0,0,0.6); 
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
     }
 
     .heading {
-        text-align: center; font-weight: 900; font-size: 32px;
-        color: var(--cyan); margin-bottom: 15px;
+        text-align: center;
+        font-weight: 900;
+        font-size: 32px;
+        color: var(--cyan);
+        margin-bottom: 15px;
     }
 
     .info-text {
-        text-align: center; color: #b0b0b0; font-size: 0.95rem;
-        line-height: 1.6; margin-bottom: 30px;
+        text-align: center;
+        color: #b0b0b0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 24px;
     }
 
-    /* Inputs */
+    .contact-mode-switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 4px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 14px;
+        margin-bottom: 22px;
+    }
+
+    .mode-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: none;
+        border-radius: 10px;
+        padding: 11px 12px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        background: transparent;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .mode-btn.active {
+        background: rgba(0, 188, 212, 0.14);
+        color: var(--cyan);
+    }
+
+    .panel-hint {
+        text-align: center;
+        color: #777;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        margin: 0 0 18px;
+    }
+
+    .contact-panel[hidden] {
+        display: none;
+    }
+
     .form .input {
         width: 100%;
         background: var(--bg-card);
-        border: 1px solid rgba(255,255,255,0.05);
+        border: 1px solid rgba(255, 255, 255, 0.05);
         padding: 16px 20px;
         border-radius: 16px;
         margin-bottom: 20px;
         color: white;
         font-family: inherit;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
         transition: 0.3s;
     }
+
     .form .input::placeholder { color: #666; }
+
     .form .input:focus {
-        outline: none; border-color: var(--cyan); background: #151515;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+        outline: none;
+        border-color: var(--cyan);
+        background: #151515;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
     }
 
     .textarea { resize: vertical; min-height: 120px; }
 
-    /* Button */
     .form .login-button {
-        display: block; width: 100%; font-weight: bold;
-        background: var(--cyan); color: white;
-        padding-block: 16px; border-radius: 16px; border: none;
-        cursor: pointer; font-size: 1rem;
+        display: block;
+        width: 100%;
+        font-weight: bold;
+        background: var(--cyan);
+        color: white;
+        padding-block: 16px;
+        border-radius: 16px;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
         transition: all 0.2s ease;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         margin-top: 10px;
     }
-    .form .login-button:hover { filter: brightness(1.1); transform: translateY(-2px); }
-    .form .login-button:disabled { background: #444; color: #aaa; cursor: wait; transform: none; box-shadow: none; }
 
+    .form .login-button:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+    .form .login-button:disabled {
+        background: #444;
+        color: #aaa;
+        cursor: wait;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .form-result {
+        text-align: center;
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    @media (max-width: 480px) {
+        .container {
+            padding: 28px 20px;
+            border-radius: 22px;
+        }
+
+        .heading { font-size: 26px; }
+
+        .mode-btn {
+            font-size: 0.76rem;
+            padding: 10px 8px;
+        }
+    }
 </style>

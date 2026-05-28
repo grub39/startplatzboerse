@@ -25,11 +25,14 @@ Wenn v2 fertig ist: `Version-2.0.0` in `main` mergen.
 # Website
 cd web && npm install && npm run dev
 
-# App
+# App (nur dieser Ordner – nicht mehr startplatzboerse-app/Code/)
 cd app && npm install && npm run start
+
+# Vor eas build (ohne Wartezeit auf Cloud-Build):
+cd app && npm run check
 ```
 
-Kopiere jeweils `.env.example` nach `.env` (nicht committen).
+**Env:** Website nutzt `PUBLIC_*` in `.env` im **Repo-Root** (siehe `web/.env.example`). App nutzt `EXPO_PUBLIC_*` in `app/.env.local` (siehe `app/.env.example`). Nicht committen.
 
 ## Deploy
 

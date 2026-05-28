@@ -23,6 +23,9 @@ export function ListingModal({ listing, onClose }: Props) {
                 {listing.location || 'Ort offen'} · {formatDate(listing.event_date)}
               </Text>
               <Text style={styles.modalPrice}>{formatCurrency(listing.price)}</Text>
+              <Text style={styles.modalPriceType}>
+                {listing.price_type === 'vb' ? 'Verhandlungsbasis' : 'Festpreis'}
+              </Text>
               <Text style={styles.modalSectionTitle}>Distanz</Text>
               <Text style={styles.modalBody}>{formatListingDistance(listing)}</Text>
               {!!listing.description && (
@@ -84,6 +87,14 @@ const styles = StyleSheet.create({
     color: colors.cyan,
     fontSize: 30,
     fontWeight: '900',
+  },
+  modalPriceType: {
+    color: '#777',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginTop: -6,
   },
   modalSectionTitle: {
     color: colors.faint,

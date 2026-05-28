@@ -102,6 +102,7 @@ export function SellScreen({ session, onGoLogin, onConsumeAndroidBackPress }: Pr
   const [location, setLocation] = useState('');
   const [eventUrl, setEventUrl] = useState('');
   const [price, setPrice] = useState('');
+  const [priceType, setPriceType] = useState<'fixed' | 'vb'>('fixed');
   const [description, setDescription] = useState('');
   const [selectedDistance, setSelectedDistance] = useState('');
 
@@ -177,6 +178,7 @@ export function SellScreen({ session, onGoLogin, onConsumeAndroidBackPress }: Pr
       setLocation('');
       setEventUrl('');
       setPrice('');
+      setPriceType('fixed');
       setDescription('');
       setCustomDistanceKm('');
       setSwimDist('');
@@ -373,6 +375,7 @@ export function SellScreen({ session, onGoLogin, onConsumeAndroidBackPress }: Pr
         lat: finalLat,
         lng: finalLng,
         price: parsedPrice,
+        price_type: priceType,
         approved: true,
         status: 'active',
       };
@@ -584,6 +587,24 @@ export function SellScreen({ session, onGoLogin, onConsumeAndroidBackPress }: Pr
                     importantForAutofill="no"
                     autoComplete="off"
                   />
+                  <View style={styles.priceTypeRow}>
+                    <Pressable
+                      style={[styles.priceTypePill, priceType === 'fixed' && styles.priceTypePillActive]}
+                      onPress={() => setPriceType('fixed')}
+                    >
+                      <Text style={[styles.priceTypePillText, priceType === 'fixed' && styles.priceTypePillTextActive]}>
+                        Festpreis
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.priceTypePill, priceType === 'vb' && styles.priceTypePillActive]}
+                      onPress={() => setPriceType('vb')}
+                    >
+                      <Text style={[styles.priceTypePillText, priceType === 'vb' && styles.priceTypePillTextActive]}>
+                        VB
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
 
@@ -926,6 +947,18 @@ const styles = StyleSheet.create({
   triathlonRow: { flexDirection: 'row', gap: 8 },
   input: { backgroundColor: colors.card, borderWidth: 2, borderColor: colors.card, borderRadius: radius.md, paddingHorizontal: 16, height: 50, color: '#ffffff', fontSize: 15 },
   inputLabel: { color: '#ffffff', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', opacity: 0.8 },
+  priceTypeRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  priceTypePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 99,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  priceTypePillActive: { borderColor: colors.cyan, backgroundColor: 'rgba(0, 188, 212, 0.12)' },
+  priceTypePillText: { color: '#999999', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  priceTypePillTextActive: { color: colors.cyan },
 
   datePickerTrigger: {
     flexDirection: 'row',

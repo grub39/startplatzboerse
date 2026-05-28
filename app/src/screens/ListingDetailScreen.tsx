@@ -23,7 +23,13 @@ import type { Session } from '@supabase/supabase-js';
 import { formatListingDistance } from '../lib/listings';
 import { buildRunMetaHighlights } from '../lib/runListingBuild';
 import { supabase } from '../lib/supabase';
+import {
+  addPendingWatchlistId,
+  readPendingWatchlistIds,
+  removePendingWatchlistId,
+} from '../lib/watchlist';
 import { ListingHighlights } from '../components/ListingHighlights';
+import { ToastPopup } from '../components/ToastPopup';
 import { colors, radius } from '../theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -39,6 +45,7 @@ type Props = {
   listingId: string;
   session: Session | null;
   onClose: () => void;
+  onGoLogin: () => void;
 };
 
 type ListingDetail = {
@@ -48,6 +55,7 @@ type ListingDetail = {
   location: string;
   plz: string | null;
   price: number;
+  price_type: 'fixed' | 'vb' | null;
   old_price: number | null;
   category: string;
   distance: string | null;
@@ -68,7 +76,7 @@ type Seller = {
   updated_at: string | null;
 };
 
-export function ListingDetailScreen({ listingId, session, onClose }: Props) {
+export function ListingDetailScreen({ listingId, session, onClose, onGoLogin }: Props) {
   const insets = useSafeAreaInsets();
 
   const statusBarHeight = Platform.OS === 'android'
@@ -86,6 +94,7 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
   const [isSaved, setIsSaved] = useState(false);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   // Einfahren von oben
   useEffect(() => {
@@ -124,6 +133,7 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
           .from('listings')
           .select(
             'id, event_name, event_date, location, plz, price, old_price, category, distance, distance_km, elevation_gain_m, elevation_loss_m, listing_meta, swim_dist, bike_dist, run_dist, description, event_url, user_id'
+            + ', price_type'
           )
           .eq('id', listingId)
           .single();
@@ -148,6 +158,9 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
             .eq('listing_id', listingId)
             .maybeSingle();
           setIsSaved(!!wl);
+        } else {
+          const pending = await readPendingWatchlistIds();
+          setIsSaved(pending.has(listingId));
         }
       } catch (err) {
         console.error(err);
@@ -158,7 +171,7 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
       }
     }
     load();
-  }, [listingId]);
+  }, [listingId, session?.user?.id]);
 
   async function handleShare() {
     if (!listing) return;
@@ -180,7 +193,16 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
 
   async function toggleSave() {
     if (!session?.user?.id) {
-      Alert.alert('Hinweis', 'Bitte logge dich ein, um Startplätze zu merken.');
+      const pending = await readPendingWatchlistIds();
+      if (pending.has(listingId)) {
+        await removePendingWatchlistId(listingId);
+        setIsSaved(false);
+        return;
+      }
+
+      await addPendingWatchlistId(listingId);
+      setIsSaved(true);
+      setLoginPromptVisible(true);
       return;
     }
     if (isSaved) {
@@ -318,6 +340,7 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
     : null;
 
   return (
+    <>
     <Animated.View style={screenStyle}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -379,6 +402,9 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
                 <Text style={styles.oldPrice}>{listing.old_price} €</Text>
               )}
             </View>
+            <Text style={styles.priceTypeText}>
+              {listing.price_type === 'vb' ? 'Verhandlungsbasis' : 'Festpreis'}
+            </Text>
           </View>
 
           {/* INFO GRID */}
@@ -475,6 +501,22 @@ export function ListingDetailScreen({ listingId, session, onClose }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
     </Animated.View>
+
+    <ToastPopup
+      visible={loginPromptVisible}
+      type="info"
+      title="Anmelden"
+      text="Bitte logge dich ein, um Startplätze zu merken."
+      confirmText="Jetzt einloggen"
+      cancelText="Abbrechen"
+      showCancel
+      onConfirm={() => {
+        setLoginPromptVisible(false);
+        onGoLogin();
+      }}
+      onCancel={() => setLoginPromptVisible(false)}
+    />
+    </>
   );
 }
 
@@ -574,6 +616,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     textDecorationLine: 'line-through',
+  },
+  priceTypeText: {
+    marginTop: 2,
+    color: '#8a8a8a',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   // INFO CARDS

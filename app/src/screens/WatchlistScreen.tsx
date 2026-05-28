@@ -37,7 +37,7 @@ export function WatchlistScreen({ session, onOpenListing, bottomInset }: Props) 
       const { data, error: fetchError } = await supabase
         .from('watchlist')
         .select(
-          `id, listing_id, listings (id, category, event_name, event_date, location, price, distance, distance_km, swim_dist, bike_dist, run_dist, description, status, approved)`
+          `id, listing_id, listings (id, category, event_name, event_date, location, price, price_type, distance, distance_km, swim_dist, bike_dist, run_dist, description, status, approved)`
         )
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });

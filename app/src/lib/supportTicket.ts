@@ -30,6 +30,9 @@ export function isActiveSupportTicketStatus(status: string) {
 
 /** Neues Ticket nur beim ersten Senden — nicht beim Laden (sonst nach Schließen sofort neues Ticket). */
 export async function createSupportTicket(userId: string): Promise<ActiveSupportTicket> {
+  const existing = await fetchActiveSupportTicket(userId);
+  if (existing) return existing;
+
   const { data, error } = await supabase
     .from('support_tickets')
     .insert({
@@ -40,6 +43,12 @@ export async function createSupportTicket(userId: string): Promise<ActiveSupport
     .select('id, status')
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === '23505') {
+      const raced = await fetchActiveSupportTicket(userId);
+      if (raced) return raced;
+    }
+    throw error;
+  }
   return data as ActiveSupportTicket;
 }

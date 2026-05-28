@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Newsletter from '../components/Newsletter.astro';
 import SocialShare from '../components/SocialShare.astro';
+import WhatsNew from '../components/WhatsNew.astro';
 import Footer from '../components/Footer.astro';
 import Infos from '../components/Infos.astro';
 import Faq from '../components/Faq.astro';
@@ -41,8 +42,9 @@ const ratgeberTeaser = allRatgeber
     
     <div class="hero">
         <div class="hero-content">
-            <div class="badge-container">
+            <div class="hero-badges">
                 <SocialShare />
+                <WhatsNew />
             </div>
 
             <h1>Dein Rennen.<br> <span class="text-cyan">Mein Startplatz.</span></h1>
@@ -120,6 +122,7 @@ const ratgeberTeaser = allRatgeber
                     location={item.location}
                     distance={item.distance}
                     price={item.price}
+                    priceType={item.price_type}
                     oldPrice={item.old_price}
                     nickname={item.profiles?.nickname || "Gast"}
                 />
@@ -209,6 +212,18 @@ const ratgeberTeaser = allRatgeber
     .hero-content {
         max-width: 900px;
         z-index: 10;
+    }
+
+    .hero-badges {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 2rem;
+    }
+
+    .hero-badges :global(.badge-container) {
+        margin-bottom: 0;
     }
 
     .beta-badge {
@@ -393,6 +408,18 @@ const ratgeberTeaser = allRatgeber
     .hero-content {
         max-width: 900px;
         z-index: 10;
+    }
+
+    .hero-badges {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 2rem;
+    }
+
+    .hero-badges :global(.badge-container) {
+        margin-bottom: 0;
     }
 
     .beta-badge {

@@ -17,7 +17,7 @@ export async function fetchListings(filters: ListingFilters) {
   let query = supabase
     .from('listings')
     .select(
-      'id, category, event_name, event_date, location, price, distance, distance_km, swim_dist, bike_dist, run_dist, description, status, approved',
+      'id, category, event_name, event_date, location, price, price_type, distance, distance_km, swim_dist, bike_dist, run_dist, description, status, approved',
     )
     .eq('approved', true)
     .eq('status', 'active')

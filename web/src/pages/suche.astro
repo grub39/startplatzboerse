@@ -162,8 +162,8 @@ import Footer from '../components/Footer.astro';
         position: absolute;
         top: -6px;
         right: -6px;
-        background: #ff5252;
-        color: white;
+        background: var(--cyan);
+        color: #001015;
         font-size: 9px;
         font-weight: 900;
         width: 16px;
@@ -279,11 +279,11 @@ import Footer from '../components/Footer.astro';
         } 
     }
 
-    /* CARDS */
+    /* CARDS — Inhalt rückt unter die Merken-Ecke (wie App cardTop / cardMid / cardBottom) */
     .e-card {
         background: var(--bg-card);
         padding: 16px;
-        border-radius: 16px;
+        border-radius: var(--radius-card);
         border: 1px solid var(--border);
         color: white;
         transition: all 0.3s ease;
@@ -302,23 +302,35 @@ import Footer from '../components/Footer.astro';
         justify-content: space-between;
         align-items: flex-start;
         gap: 10px;
-        padding-right: 40px;
+        padding-right: 44px;
+        min-height: 40px;
     }
     .event-name {
-        color: white; font-size: 1.05rem; font-weight: 900; line-height: 1.2; flex: 1;
+        color: white;
+        font-size: 1.05rem;
+        font-weight: 900;
+        line-height: 1.2;
+        flex: 1;
+        min-width: 0;
     }
     .sport-badge {
-        background: rgba(0, 188, 212, 0.1); color: var(--cyan);
-        font-size: 0.65rem; font-weight: 900; text-transform: uppercase;
-        padding: 4px 10px; border-radius: 6px; white-space: nowrap;
-        letter-spacing: 0.5px; flex-shrink: 0;
+        background: rgba(0, 188, 212, 0.1);
+        color: var(--cyan);
+        font-size: 0.65rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
     }
 
     .c-meta {
-        display: flex; flex-direction: column; gap: 6px;
-        padding: 10px 0;
-        border-top: 1px solid rgba(255,255,255,0.05);
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
     }
     .meta-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
     .meta-row.split { display: flex; justify-content: space-between; gap: 12px; }
@@ -339,14 +351,38 @@ import Footer from '../components/Footer.astro';
     }
 
     .c-bottom {
-        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 2px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
     .price-val { color: var(--cyan); font-size: 1.8rem; font-weight: 900; line-height: 1; }
+    .price-box { display: flex; flex-direction: column; gap: 3px; }
+    .price-type {
+        color: #777;
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
     .details-link {
-        background: var(--cyan); color: #000; text-decoration: none;
-        padding: 10px 20px; border-radius: 8px; font-size: 0.75rem; font-weight: 800;
-        text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease;
-        white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;
+        background: var(--cyan);
+        color: #000;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
     .details-link:hover { background: white; transform: translateX(2px); }
 
@@ -380,6 +416,11 @@ import Footer from '../components/Footer.astro';
 
 <script>
     import { createClient } from '@supabase/supabase-js';
+    import {
+        getSearchDistanceChip,
+        listingMatchesDistanceChip,
+        SEARCH_DISTANCE_CHIPS,
+    } from '../constants/listingOptions';
     import { heartButtonHtml, initWatchlistUi, loadWatchlistIds, syncHeartButtons } from '../lib/watchlist';
 
     const supabase = createClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
@@ -398,31 +439,8 @@ import Footer from '../components/Footer.astro';
     const distancePresets = document.getElementById('distance-presets') as HTMLElement;
 
     let activeCat = "";
-    let exactDistanceFilter: { value: number; tolerance: number } | null = null;
+    let activeDistanceChipLabel: string | null = null;
     let debounceTimer: ReturnType<typeof setTimeout>;
-    const DISTANCE_PRESET_TOLERANCE_KM = 7;
-
-    const distancePresetMap: Record<string, { label: string; value: number; tolerance?: number }[]> = {
-        Laufen: [
-            { label: '5 km', value: 5, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: '10 km', value: 10, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Halbmarathon', value: 21.1, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Marathon', value: 42.2, tolerance: DISTANCE_PRESET_TOLERANCE_KM }
-        ],
-        Radrennen: [
-    
-            { label: 'Kurzstrecke', value: 60, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Jedermann', value: 100, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Gran Fondo', value: 160, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Radmarathon', value: 200, tolerance: DISTANCE_PRESET_TOLERANCE_KM }
-        ],
-        Triathlon: [
-            { label: 'Sprint', value: 26, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Olympisch', value: 52, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Mitteldistanz', value: 113, tolerance: DISTANCE_PRESET_TOLERANCE_KM },
-            { label: 'Langdistanz', value: 226, tolerance: DISTANCE_PRESET_TOLERANCE_KM }
-        ]
-    };
 
     function formatDistanceValue(value: number) {
         return String(value).replace('.', ',');
@@ -435,7 +453,7 @@ import Footer from '../components/Footer.astro';
     function setDistanceFilterValue(value: number | '') {
         if (!distInput) return;
         distInput.value = value === '' ? '' : String(value);
-        exactDistanceFilter = null;
+        activeDistanceChipLabel = null;
         updateDistancePresetState();
         updateFilterBadge();
     }
@@ -443,8 +461,8 @@ import Footer from '../components/Footer.astro';
     function updateDistancePresetState() {
         if (!distancePresets || !distInput) return;
         distancePresets.querySelectorAll<HTMLButtonElement>('.distance-chip').forEach((chip) => {
-            const value = parseFloat(chip.dataset.value || '');
-            chip.classList.toggle('active', exactDistanceFilter !== null && value === exactDistanceFilter.value);
+            const label = chip.dataset.label || '';
+            chip.classList.toggle('active', activeDistanceChipLabel !== null && label === activeDistanceChipLabel);
         });
     }
 
@@ -458,7 +476,7 @@ import Footer from '../components/Footer.astro';
             distInput.value = '';
             distInput.placeholder = 'Nicht relevant für Hyrox';
             distLabel.innerText = 'Distanz (km)';
-            exactDistanceFilter = null;
+            activeDistanceChipLabel = null;
             return;
         }
 
@@ -467,7 +485,7 @@ import Footer from '../components/Footer.astro';
             distInput.value = '';
             distInput.placeholder = 'Sportart wählen';
             distLabel.innerText = 'Bis inkl. Distanz (km)';
-            exactDistanceFilter = null;
+            activeDistanceChipLabel = null;
             return;
         }
 
@@ -475,22 +493,23 @@ import Footer from '../components/Footer.astro';
         distInput.placeholder = 'z.B. 42,2';
         distLabel.innerText = 'Bis inkl. Distanz (km)';
 
-        const presets = distancePresetMap[activeCat] || [];
-        distancePresets.innerHTML = presets.map((preset) => `
-            <button class="distance-chip" type="button" data-value="${preset.value}" data-tolerance="${preset.tolerance ?? 0.05}" aria-label="Nur ${preset.label} mit ${formatDistanceValue(preset.value)} Kilometer">
+        const presets = SEARCH_DISTANCE_CHIPS[activeCat] || [];
+        distancePresets.innerHTML = presets.map((preset) => {
+            const kmHint = typeof preset.targetKm === 'number'
+                ? ` mit ca. ${formatDistanceValue(preset.targetKm)} km`
+                : '';
+            return `
+            <button class="distance-chip" type="button" data-label="${preset.label}" aria-label="Filter ${preset.label}${kmHint}">
                 ${preset.label}
             </button>
-        `).join('');
+        `;
+        }).join('');
 
         distancePresets.querySelectorAll<HTMLButtonElement>('.distance-chip').forEach((chip) => {
             chip.addEventListener('click', () => {
-                const value = parseFloat(chip.dataset.value || '');
-                if (!Number.isFinite(value)) return;
-                const tolerance = parseFloat(chip.dataset.tolerance || '0.05');
-                exactDistanceFilter = exactDistanceFilter?.value === value ? null : {
-                    value,
-                    tolerance: Number.isFinite(tolerance) ? tolerance : 0.05
-                };
+                const label = chip.dataset.label || '';
+                if (!label) return;
+                activeDistanceChipLabel = activeDistanceChipLabel === label ? null : label;
                 distInput.value = '';
                 updateDistancePresetState();
                 updateFilterBadge();
@@ -516,7 +535,7 @@ import Footer from '../components/Footer.astro';
         if ((document.getElementById('city-input') as HTMLInputElement).value) count++;
         if ((document.getElementById('max-price') as HTMLInputElement).value) count++;
         if (!(document.getElementById('max-dist') as HTMLInputElement).disabled && (document.getElementById('max-dist') as HTMLInputElement).value) count++;
-        if (exactDistanceFilter !== null) count++;
+        if (activeDistanceChipLabel !== null) count++;
 
         if (filterBadge) {
             if (count > 0) {
@@ -607,7 +626,7 @@ import Footer from '../components/Footer.astro';
             query = query.lte('price', parseFloat(priceVal));
         }
 
-        const { data, error } = await query.order('event_date', { ascending: true });
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
             if (countDisplay) countDisplay.innerText = 'Fehler beim Laden.';
@@ -617,9 +636,12 @@ import Footer from '../components/Footer.astro';
 
         let filtered = data || [];
 
-        // Distanz-Chips filtern um den Preset-Zielwert; das Eingabefeld filtert bis einschließlich km.
-        if (exactDistanceFilter !== null && activeCat && activeCat !== 'Hyrox') {
-            filtered = filtered.filter(e => Math.abs((e.distance_km ?? -999) - exactDistanceFilter!.value) <= exactDistanceFilter!.tolerance);
+        const activeChip = activeDistanceChipLabel
+            ? getSearchDistanceChip(activeCat, activeDistanceChipLabel)
+            : undefined;
+
+        if (activeChip && activeCat && activeCat !== 'Hyrox') {
+            filtered = filtered.filter((e) => listingMatchesDistanceChip(e, activeChip));
         } else if (distVal && activeCat && activeCat !== 'Hyrox') {
             const maxDist = parseDistanceInput(distVal);
             if (Number.isFinite(maxDist)) {
@@ -712,7 +734,10 @@ import Footer from '../components/Footer.astro';
                     </div>
                 </div>
                 <div class="c-bottom">
-                    <div class="price-val">${e.price}€</div>
+                    <div class="price-box">
+                        <div class="price-val">${e.price}€</div>
+                        <div class="price-type">${e.price_type === 'vb' ? 'VB' : 'Festpreis'}</div>
+                    </div>
                     <a href="/listing/${e.id}?from=search" class="details-link">Details →</a>
                 </div>
             </div>`;
@@ -732,7 +757,7 @@ import Footer from '../components/Footer.astro';
         document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
         pill.classList.add('active');
         activeCat = pill.dataset.cat || '';
-        exactDistanceFilter = null;
+        activeDistanceChipLabel = null;
 
         updateDistanceFilterUi();
         performFetch();
@@ -748,6 +773,7 @@ import Footer from '../components/Footer.astro';
         document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
         document.querySelector('.pill[data-cat=""]')?.classList.add('active');
         activeCat = '';
+        activeDistanceChipLabel = null;
         updateDistanceFilterUi();
         setGeoStatus('hidden', '');
         updateFilterBadge();
@@ -768,7 +794,7 @@ import Footer from '../components/Footer.astro';
     });
 
     distInput?.addEventListener('input', () => {
-        exactDistanceFilter = null;
+        activeDistanceChipLabel = null;
         updateDistancePresetState();
         updateFilterBadge();
     });

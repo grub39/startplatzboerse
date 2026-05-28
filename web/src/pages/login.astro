@@ -64,6 +64,7 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
     // --- IMPORT & INITIALISIERUNG ---
     import { createClient } from '@supabase/supabase-js';
     import { hideFeedback, showFeedbackError } from '../lib/feedback-banner';
+    import { flushPendingWatchlist } from '../lib/watchlist';
 
     // Supabase-Client starten
     const supabase = createClient(
@@ -163,9 +164,9 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
                 .single();
 
             if (profile?.has_completed_onboarding) {
-                // User existiert schon -> Weiterleitung zum Dashboard
                 const urlParams = new URLSearchParams(window.location.search);
-                window.location.href = urlParams.get('redirect') || "/dashboard";
+                await flushPendingWatchlist();
+                window.location.href = urlParams.get('redirect') || '/dashboard';
             } else {
                 // Neuer User -> UI umschalten zum Profil-Erstellen
                 if(stepCode) stepCode.style.display = 'none';
@@ -230,8 +231,9 @@ import FeedbackBanner from '../components/FeedbackBanner.astro';
             btn.innerText = "Profil speichern & Starten";
             btn.disabled = false;
         } else {
-            // Erfolg -> Weiterleitung
-            window.location.href = "/dashboard";
+            const urlParams = new URLSearchParams(window.location.search);
+            await flushPendingWatchlist();
+            window.location.href = urlParams.get('redirect') || '/dashboard';
         }
     });
 

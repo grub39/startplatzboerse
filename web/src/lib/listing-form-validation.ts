@@ -153,7 +153,10 @@ export function validateEventDate(eventDate: string): string | null {
     return null;
 }
 
-export function validateListingStep2(input: ListingStep2Input): string | null {
+export function validateListingStep2(
+    input: ListingStep2Input,
+    options?: { skipRunSpecialDetails?: boolean }
+): string | null {
     if (!input.category) return 'Bitte Sportart wählen.';
 
     const eventName = input.eventName.trim();
@@ -176,11 +179,11 @@ export function validateListingStep2(input: ListingStep2Input): string | null {
         return validateDistanceKm(input.customKm, 'Strecke');
     }
 
-    if (input.category === 'Laufen' && input.distance === 'Ultra') {
+    if (!options?.skipRunSpecialDetails && input.category === 'Laufen' && input.distance === 'Ultra') {
         return validateUltraForm(input.ultra ?? emptyUltraForm());
     }
 
-    if (input.category === 'Laufen' && input.distance === 'Trail') {
+    if (!options?.skipRunSpecialDetails && input.category === 'Laufen' && input.distance === 'Trail') {
         return validateTrailForm(input.trail ?? emptyTrailForm());
     }
 

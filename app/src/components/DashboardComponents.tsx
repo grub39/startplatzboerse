@@ -78,7 +78,10 @@ export function CompactListing({ listing }: { listing: Listing }) {
           {listing.location || 'Ort offen'} · {formatDate(listing.event_date)}
         </Text>
       </View>
-      <Text style={styles.compactPrice}>{formatCurrency(listing.price)}</Text>
+      <View style={styles.priceStack}>
+        <Text style={styles.compactPrice}>{formatCurrency(listing.price)}</Text>
+        <Text style={styles.priceType}>{listing.price_type === 'vb' ? 'VB' : 'Festpreis'}</Text>
+      </View>
     </View>
   );
 }
@@ -105,7 +108,10 @@ export function DashboardListingCard({ listing, actionLabel, onAction }: Dashboa
       </Text>
       <View style={styles.cardBottom}>
         <Text style={styles.distanceText}>{formatListingDistance(listing)}</Text>
-        <Text style={styles.priceText}>{formatCurrency(listing.price)}</Text>
+        <View style={styles.priceStack}>
+          <Text style={styles.priceText}>{formatCurrency(listing.price)}</Text>
+          <Text style={styles.priceType}>{listing.price_type === 'vb' ? 'VB' : 'Festpreis'}</Text>
+        </View>
       </View>
       <Pressable style={styles.secondaryButtonInline} onPress={onAction}>
         <Text style={styles.secondaryButtonText}>{actionLabel}</Text>
@@ -248,6 +254,14 @@ const styles = StyleSheet.create({
     color: colors.cyan,
     fontSize: 15,
     fontWeight: '900',
+  },
+  priceStack: { alignItems: 'flex-end', gap: 1 },
+  priceType: {
+    color: '#777',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   card: {
     backgroundColor: colors.card,

@@ -52,6 +52,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
   const [plz, setPlz] = useState('');
   const [location, setLocation] = useState('');
   const [eventUrl, setEventUrl] = useState('');
+  const [priceType, setPriceType] = useState<'fixed' | 'vb'>('fixed');
   const [dbItem, setDbItem] = useState<{ price: number; old_price: number | null } | null>(null);
 
   // Modal von oben einfahren
@@ -79,7 +80,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
       try {
         const { data, error } = await supabase
           .from('listings')
-          .select('price, description, street, plz, location, event_url, old_price')
+          .select('price, price_type, description, street, plz, location, event_url, old_price')
           .eq('id', listingId)
           .single();
 
@@ -92,6 +93,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
           setPlz(data.plz || '');
           setLocation(data.location || '');
           setEventUrl(data.event_url || '');
+          setPriceType(data.price_type === 'vb' ? 'vb' : 'fixed');
           setDbItem({ price: data.price, old_price: data.old_price });
         }
       } catch (err) {
@@ -146,6 +148,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
         plz: plz.trim(),
         location: location.trim(),
         event_url: eventUrl.trim() || null,
+        price_type: priceType,
       };
       if (finalLat && finalLng) {
         updatePayload.lat = finalLat;
@@ -173,7 +176,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
     left: 0,
     right: 0,
     height: modalHeight,
-    backgroundColor: '#323232',
+    backgroundColor: colors.background,
     overflow: 'hidden' as const,
     transform: [{ translateY: slideAnim }],
     zIndex: 100,
@@ -220,6 +223,24 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
               onChangeText={setPrice}
               returnKeyType="next"
             />
+            <View style={styles.priceTypeRow}>
+              <Pressable
+                style={[styles.priceTypePill, priceType === 'fixed' && styles.priceTypePillActive]}
+                onPress={() => setPriceType('fixed')}
+              >
+                <Text style={[styles.priceTypePillText, priceType === 'fixed' && styles.priceTypePillTextActive]}>
+                  Festpreis
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.priceTypePill, priceType === 'vb' && styles.priceTypePillActive]}
+                onPress={() => setPriceType('vb')}
+              >
+                <Text style={[styles.priceTypePillText, priceType === 'vb' && styles.priceTypePillTextActive]}>
+                  VB
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.formGroup}>
@@ -228,7 +249,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
               style={styles.input}
               keyboardType="url"
               placeholder="https://..."
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.muted}
               value={eventUrl}
               onChangeText={setEventUrl}
               autoCapitalize="none"
@@ -241,7 +262,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
             <TextInput
               style={styles.input}
               placeholder="z.B. Feldstraße 4"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.muted}
               value={street}
               onChangeText={setStreet}
               returnKeyType="next"
@@ -334,11 +355,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
-    backgroundColor: '#323232',
+    backgroundColor: colors.background,
   },
-  headerTitle: { color: '#ffffff', fontSize: 19, fontWeight: '900' },
+  headerTitle: { color: colors.text, fontSize: 19, fontWeight: '900' },
   closeButton: { padding: 4 },
-  closeButtonText: { color: '#888', fontSize: 18, fontWeight: '700' },
+  closeButtonText: { color: colors.muted, fontSize: 18, fontWeight: '700' },
   scrollContent: {
     padding: 20,
     paddingBottom: 40, // Genug Puffer, damit das Formular sauber vor der Tab-Bar endet
@@ -347,22 +368,34 @@ const styles = StyleSheet.create({
   formGroup: { gap: 6 },
   row: { flexDirection: 'row', gap: 12 },
   inputLabel: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
     opacity: 0.8,
   },
   input: {
-    backgroundColor: '#111111',
+    backgroundColor: colors.card,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: colors.card,
     borderRadius: radius.md,
     paddingHorizontal: 16,
     height: 50,
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 15,
   },
+  priceTypeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  priceTypePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 99,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  priceTypePillActive: { borderColor: colors.cyan, backgroundColor: 'rgba(0, 188, 212, 0.12)' },
+  priceTypePillText: { color: '#999999', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  priceTypePillTextActive: { color: colors.cyan },
   textArea: {
     height: 110,
     paddingTop: 12,
@@ -389,16 +422,16 @@ const styles = StyleSheet.create({
   successCard: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: '#111111',
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.08)',
     padding: 24,
     alignItems: 'center',
   },
-  successTitle: { color: '#ffffff', fontSize: 20, fontWeight: '900', marginBottom: 8 },
+  successTitle: { color: colors.text, fontSize: 20, fontWeight: '900', marginBottom: 8 },
   successText: {
-    color: '#888888',
+    color: colors.muted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,

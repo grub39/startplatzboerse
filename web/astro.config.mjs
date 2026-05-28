@@ -2,6 +2,11 @@ import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel/serverless';
 
 export default defineConfig({
+  // Gemeinsame .env im Monorepo-Root (../.env), nicht nur in web/
+  vite: {
+    envDir: '..',
+  },
+
   site: 'https://startplatzboerse.com',
 
   // 2. Erlaubt Astro, Seiten live auf dem Server zu generieren

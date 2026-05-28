@@ -1,0 +1,419 @@
+---
+const updates = [
+    {
+        title: 'Merkliste',
+        description:
+            'Startplätze mit dem Herz merken und jederzeit in deinem Dashboard wiederfinden – auch ohne sofort zu kaufen.',
+        status: 'live',
+    },
+    {
+        title: 'Support-Chat',
+        description:
+            'Direkter Draht zum Team wie in der App – jetzt auch auf der Kontaktseite im Web verfügbar.',
+        status: 'live',
+    },
+    {
+        title: 'Neue Suche',
+        description:
+            'Filter, Umkreis und Distanz-Vorgaben – die durchdachte Suche aus der App, jetzt auf der Website.',
+        status: 'live',
+    },
+    {
+        title: 'Neues Dashboard',
+        description:
+            'Übersichtlicher, klarer und schneller: deine Inserate, Merkliste und Nachrichten an einem Ort.',
+        status: 'live',
+    },
+    {
+        title: 'Bearbeitung verbessert',
+        description:
+            'Eigene Inserate kannst du jetzt wie in der App bearbeiten: Preis + Festpreis/VB, Beschreibung, Adresse und Event-Website.',
+        status: 'live',
+    },
+];
+---
+
+<div class="whats-new-trigger-wrap">
+    <button type="button" class="whats-new-pill" id="whats-new-open" aria-haspopup="dialog" aria-controls="whats-new-dialog">
+        Was ist neu?
+    </button>
+</div>
+
+<div class="whats-new-overlay" id="whats-new-overlay" hidden>
+    <div
+        class="whats-new-dialog"
+        id="whats-new-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="whats-new-title"
+        tabindex="-1"
+    >
+        <div class="whats-new-dialog-glow" aria-hidden="true"></div>
+
+        <header class="whats-new-header">
+            <div>
+                <p class="whats-new-kicker">Version 2.0</p>
+                <h2 id="whats-new-title">Was ist neu?</h2>
+                <p class="whats-new-lead">Die wichtigsten Neuerungen auf einen Blick.</p>
+            </div>
+            <button type="button" class="whats-new-close" id="whats-new-close" aria-label="Schließen">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" />
+                </svg>
+            </button>
+        </header>
+
+        <ul class="whats-new-list">
+            {updates.map((item) => (
+                <li class="whats-new-item">
+                    <span class="whats-new-item-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                    <div class="whats-new-item-body">
+                        <div class="whats-new-item-top">
+                            <h3>{item.title}</h3>
+                            {item.status === 'soon' ? (
+                                <span class="whats-new-tag soon">Demnächst</span>
+                            ) : (
+                                <span class="whats-new-tag live">Neu</span>
+                            )}
+                        </div>
+                        <p>{item.description}</p>
+                    </div>
+                </li>
+            ))}
+        </ul>
+
+        <footer class="whats-new-footer">
+            <button type="button" class="whats-new-cta" id="whats-new-dismiss">Alles klar</button>
+        </footer>
+    </div>
+</div>
+
+<style>
+    .whats-new-trigger-wrap {
+        display: flex;
+        justify-content: center;
+        margin-top: 0.65rem;
+    }
+
+    .whats-new-pill {
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #001015;
+        background: linear-gradient(135deg, #36d8ed 0%, #00bcd4 58%, #00a7bc 100%);
+        padding: 7px 16px;
+        border-radius: 999px;
+        box-shadow:
+            0 2px 12px rgba(0, 188, 212, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .whats-new-pill:hover {
+        transform: translateY(-1px) scale(1.03);
+        box-shadow:
+            0 6px 20px rgba(0, 188, 212, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .whats-new-pill:active {
+        transform: scale(0.98);
+    }
+
+    .whats-new-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.72);
+        backdrop-filter: blur(10px);
+        animation: whats-new-fade-in 0.25s ease;
+    }
+
+    .whats-new-overlay[hidden] {
+        display: none;
+    }
+
+    @keyframes whats-new-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes whats-new-slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .whats-new-dialog {
+        position: relative;
+        width: 100%;
+        max-width: 560px;
+        max-height: min(88vh, 720px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(180deg, #2b2b2b 0%, #262626 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        box-shadow:
+            0 24px 80px rgba(0, 0, 0, 0.55),
+            0 0 0 1px rgba(0, 188, 212, 0.08);
+        animation: whats-new-slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .whats-new-dialog-glow {
+        position: absolute;
+        top: -80px;
+        right: -40px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(0, 188, 212, 0.2) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .whats-new-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .whats-new-kicker {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--cyan);
+        margin-bottom: 6px;
+    }
+
+    .whats-new-header h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: white;
+        margin: 0 0 6px;
+    }
+
+    .whats-new-lead {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin: 0;
+        line-height: 1.45;
+    }
+
+    .whats-new-close {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+        color: #aaa;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .whats-new-close:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+    }
+
+    .whats-new-list {
+        list-style: none;
+        margin: 0;
+        padding: 10px 16px 12px;
+        overflow-y: auto;
+        flex: 1;
+        display: grid;
+        gap: 8px;
+    }
+
+    .whats-new-item {
+        display: flex;
+        gap: 14px;
+        padding: 14px 12px;
+        border-radius: 14px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.025);
+    }
+
+    .whats-new-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(0, 188, 212, 0.25);
+    }
+
+    .whats-new-item-icon {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: rgba(0, 188, 212, 0.1);
+        color: var(--cyan);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .whats-new-item-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .whats-new-item-body {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+    }
+
+    .whats-new-item-top {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    .whats-new-item-top h3 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+    }
+
+    .whats-new-item-body p {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
+        margin: 0;
+        text-align: left;
+    }
+
+    .whats-new-tag {
+        font-size: 0.58rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 3px 8px;
+        border-radius: 999px;
+    }
+
+    .whats-new-tag.live {
+        background: rgba(0, 188, 212, 0.15);
+        color: var(--cyan);
+    }
+
+    .whats-new-tag.soon {
+        background: rgba(255, 255, 255, 0.12);
+        color: #d0d0d0;
+    }
+
+    .whats-new-footer {
+        padding: 12px 20px 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .whats-new-cta {
+        width: 100%;
+        border: none;
+        border-radius: 14px;
+        padding: 14px 20px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: #000;
+        background: var(--cyan);
+        transition: filter 0.2s ease, transform 0.15s ease;
+    }
+
+    .whats-new-cta:hover {
+        filter: brightness(1.08);
+    }
+
+    .whats-new-cta:active {
+        transform: scale(0.99);
+    }
+
+    @media (max-width: 480px) {
+        .whats-new-overlay {
+            padding: 12px;
+            align-items: flex-end;
+        }
+
+        .whats-new-dialog {
+            max-height: 92vh;
+            border-radius: 20px 20px 16px 16px;
+        }
+
+        .whats-new-header {
+            padding: 20px 18px 14px;
+        }
+    }
+</style>
+
+<script>
+    function initWhatsNew() {
+        const openBtn = document.getElementById('whats-new-open');
+        const overlay = document.getElementById('whats-new-overlay');
+        const dialog = document.getElementById('whats-new-dialog');
+        const closeBtn = document.getElementById('whats-new-close');
+        const dismissBtn = document.getElementById('whats-new-dismiss');
+
+        if (!openBtn || !overlay || !dialog || openBtn.dataset.bound === '1') return;
+        openBtn.dataset.bound = '1';
+
+        let lastFocused: HTMLElement | null = null;
+
+        function openModal() {
+            lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            overlay.hidden = false;
+            document.body.style.overflow = 'hidden';
+            dialog.focus();
+        }
+
+        function closeModal() {
+            overlay.hidden = true;
+            document.body.style.overflow = '';
+            lastFocused?.focus();
+        }
+
+        openBtn.addEventListener('click', openModal);
+        closeBtn?.addEventListener('click', closeModal);
+        dismissBtn?.addEventListener('click', closeModal);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !overlay.hidden) closeModal();
+        });
+    }
+
+    initWhatsNew();
+    document.addEventListener('astro:page-load', initWhatsNew);
+</script>

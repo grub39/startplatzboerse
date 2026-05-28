@@ -1,0 +1,8 @@
+{
+  "name": "startplatzboerse-root",
+  "private": true,
+  "workspaces": [
+    "app",
+    "web"
+  ]
+}

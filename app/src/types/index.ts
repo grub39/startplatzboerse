@@ -14,6 +14,7 @@ export type Listing = {
   location: string | null;
   plz?: string | null;
   price: number;
+  price_type?: 'fixed' | 'vb' | null;
   distance: string | null;
   distance_km: number | null;
   elevation_gain_m?: number | null;

@@ -52,7 +52,10 @@ export function ListingCard({ listing, saved, onOpen, onSave }: Props) {
 
       <View style={styles.cardBottom}>
         <Text style={styles.distanceText}>{formatListingDistance(listing)}</Text>
-        <Text style={styles.priceText}>{formatCurrency(listing.price)}</Text>
+        <View style={styles.priceWrap}>
+          <Text style={styles.priceText}>{formatCurrency(listing.price)}</Text>
+          <Text style={styles.priceType}>{listing.price_type === 'vb' ? 'VB' : 'Festpreis'}</Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -164,9 +167,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  priceWrap: { alignItems: 'flex-end', gap: 2 },
   priceText: {
     color: colors.cyan,
     fontSize: 22,
     fontWeight: '900',
+  },
+  priceType: {
+    color: '#777',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

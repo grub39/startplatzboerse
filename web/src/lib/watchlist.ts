@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+const PENDING_WATCHLIST_KEY = 'spb_pending_watchlist';
+
 let supabaseInstance: SupabaseClient | null = null;
 
 export function getSupabase() {
@@ -20,12 +22,72 @@ export function invalidateWatchlistCache() {
     cacheUserId = null;
 }
 
+function readPendingWatchlistIds(): Set<string> {
+    if (typeof localStorage === 'undefined') return new Set();
+
+    try {
+        const raw = localStorage.getItem(PENDING_WATCHLIST_KEY);
+        if (!raw) return new Set();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return new Set();
+        return new Set(parsed.filter((id): id is string => typeof id === 'string' && id.length > 0));
+    } catch {
+        return new Set();
+    }
+}
+
+function writePendingWatchlistIds(ids: Set<string>) {
+    if (typeof localStorage === 'undefined') return;
+    if (ids.size === 0) {
+        localStorage.removeItem(PENDING_WATCHLIST_KEY);
+        return;
+    }
+    localStorage.setItem(PENDING_WATCHLIST_KEY, JSON.stringify([...ids]));
+}
+
+export function addPendingWatchlistId(listingId: string) {
+    const ids = readPendingWatchlistIds();
+    ids.add(listingId);
+    writePendingWatchlistIds(ids);
+}
+
+/** Nach Login/Registrierung: lokale Merk-Vormerkungen in Supabase übernehmen. */
+export async function flushPendingWatchlist(): Promise<number> {
+    const pending = readPendingWatchlistIds();
+    if (pending.size === 0) return 0;
+
+    const supabase = getSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    const rows = [...pending].map((listing_id) => ({
+        user_id: user.id,
+        listing_id,
+    }));
+
+    const { error } = await supabase
+        .from('watchlist')
+        .upsert(rows, { onConflict: 'user_id,listing_id', ignoreDuplicates: true });
+
+    if (error) {
+        console.error('Merkliste synchronisieren fehlgeschlagen:', error.message);
+        return 0;
+    }
+
+    writePendingWatchlistIds(new Set());
+    invalidateWatchlistCache();
+
+    const ids = await loadWatchlistIds();
+    window.dispatchEvent(new CustomEvent('watchlist:changed', { detail: { count: ids.size } }));
+    return rows.length;
+}
+
 export async function loadWatchlistIds(): Promise<Set<string>> {
     const supabase = getSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        cachedIds = new Set();
+        cachedIds = readPendingWatchlistIds();
         cacheUserId = null;
         return cachedIds;
     }
@@ -54,7 +116,20 @@ export async function toggleWatchlist(listingId: string): Promise<{ saved: boole
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        return { saved: false, requiresLogin: true };
+        const pending = readPendingWatchlistIds();
+        const wasSaved = pending.has(listingId);
+
+        if (wasSaved) {
+            pending.delete(listingId);
+            writePendingWatchlistIds(pending);
+            cachedIds = pending;
+            return { saved: false, requiresLogin: false };
+        }
+
+        pending.add(listingId);
+        writePendingWatchlistIds(pending);
+        cachedIds = pending;
+        return { saved: true, requiresLogin: true };
     }
 
     const ids = await loadWatchlistIds();
@@ -119,15 +194,14 @@ export function bindWatchlistDelegation(root: Document | HTMLElement = document)
 
         try {
             const result = await toggleWatchlist(listingId);
+            const ids = await loadWatchlistIds();
+            syncHeartButtons(ids);
 
             if (result.requiresLogin) {
                 const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
                 window.location.href = `/login?redirect=${returnTo}`;
                 return;
             }
-
-            const ids = await loadWatchlistIds();
-            syncHeartButtons(ids);
         } catch (err) {
             console.error('Merkliste Fehler:', err);
         } finally {
@@ -138,6 +212,13 @@ export function bindWatchlistDelegation(root: Document | HTMLElement = document)
 
 export async function initWatchlistUi(root?: ParentNode) {
     bindWatchlistDelegation();
+
+    const supabase = getSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        await flushPendingWatchlist();
+    }
+
     const ids = await loadWatchlistIds();
     syncHeartButtons(ids, root ?? document);
     return ids;

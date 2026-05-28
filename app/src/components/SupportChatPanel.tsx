@@ -48,6 +48,9 @@ type Props = {
   isScreenActive?: boolean;
   refreshNonce?: number;
   onTicketClosed?: () => void;
+  onTicketActive?: () => void;
+  onMinimize?: () => void;
+  onMessagesSeen?: () => void;
 };
 
 /** Chat-Karte in der Support-ScrollView (Nachrichtenbereich scrollt intern). */
@@ -83,6 +86,9 @@ export function SupportChatPanel({
   isScreenActive = true,
   refreshNonce = 0,
   onTicketClosed,
+  onTicketActive,
+  onMinimize,
+  onMessagesSeen,
 }: Props) {
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
@@ -92,6 +98,14 @@ export function SupportChatPanel({
   const [matrixDeliveryHint, setMatrixDeliveryHint] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
+  // Callbacks per Ref stabil halten – verhindert endlose bootstrap-Loops
+  const onTicketClosedRef = useRef(onTicketClosed);
+  const onTicketActiveRef = useRef(onTicketActive);
+  const onMessagesSeen_Ref = useRef(onMessagesSeen);
+  useEffect(() => { onTicketClosedRef.current = onTicketClosed; }, [onTicketClosed]);
+  useEffect(() => { onTicketActiveRef.current = onTicketActive; }, [onTicketActive]);
+  useEffect(() => { onMessagesSeen_Ref.current = onMessagesSeen; }, [onMessagesSeen]);
+
   const scrollToBottom = useCallback((animated = true) => {
     scrollRef.current?.scrollToEnd({ animated });
   }, []);
@@ -100,8 +114,8 @@ export function SupportChatPanel({
     setTicket(null);
     setMessages([]);
     setMatrixDeliveryHint(null);
-    onTicketClosed?.();
-  }, [onTicketClosed]);
+    onTicketClosedRef.current?.();
+  }, []);
 
   const loadMessages = useCallback(async (ticketId: string) => {
     const { data, error: fetchError } = await supabase
@@ -144,13 +158,16 @@ export function SupportChatPanel({
         return;
       }
       setTicket(activeTicket);
-      await refreshFromMatrix(activeTicket.id);
+      onTicketActiveRef.current?.();
+      // Supabase-Nachrichten sofort anzeigen, Matrix-Sync danach im Hintergrund
+      await loadMessages(activeTicket.id);
+      refreshFromMatrix(activeTicket.id).catch(() => undefined);
     } catch (err) {
       console.error('Support-Chat laden fehlgeschlagen:', err);
     } finally {
       setLoading(false);
     }
-  }, [closeChatUi, refreshFromMatrix, session?.user?.id, started]);
+  }, [loadMessages, refreshFromMatrix, session?.user?.id, started]);
 
   useEffect(() => {
     bootstrap();
@@ -250,6 +267,11 @@ export function SupportChatPanel({
     return () => clearTimeout(timeout);
   }, [loading, messages, scrollToBottom]);
 
+  useEffect(() => {
+    if (!started || !isScreenActive || loading || !ticket?.id) return;
+    onMessagesSeen_Ref.current?.();
+  }, [started, isScreenActive, loading, ticket?.id, messages.length]);
+
   async function sendMessage() {
     const content = text.trim();
     if (!content || !session?.user?.id || sending) return;
@@ -263,6 +285,7 @@ export function SupportChatPanel({
         const existing = await fetchActiveSupportTicket(session.user.id);
         activeTicket = existing ?? (await createSupportTicket(session.user.id));
         setTicket(activeTicket);
+        onTicketActive?.();
       } catch (err) {
         setSending(false);
         setText(content);
@@ -329,9 +352,21 @@ export function SupportChatPanel({
             <Text style={styles.matrixHint}>{matrixDeliveryHint}</Text>
           ) : null}
         </View>
-        <View style={styles.liveBadge}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>Live</Text>
+        <View style={styles.headerActions}>
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>Live</Text>
+          </View>
+          {onMinimize ? (
+            <Pressable
+              style={styles.minimizeBtn}
+              onPress={onMinimize}
+              accessibilityLabel="Chat minimieren"
+              hitSlop={8}
+            >
+              <FontAwesome5 name="chevron-down" size={14} color={colors.muted} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
@@ -352,8 +387,8 @@ export function SupportChatPanel({
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="interactive"
-              nestedScrollEnabled
-              automaticallyAdjustKeyboardInsets
+              nestedScrollEnabled={!expanded}
+              automaticallyAdjustKeyboardInsets={expanded}
               onContentSizeChange={() => scrollToBottom(false)}
             >
               {messages.length === 0 ? (
@@ -372,7 +407,7 @@ export function SupportChatPanel({
             value={text}
             onChangeText={setText}
             placeholder="Nachricht an den Support…"
-            placeholderTextColor="#666"
+            placeholderTextColor={colors.muted}
             style={styles.input}
             multiline
             maxLength={2000}
@@ -440,6 +475,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 15,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -448,6 +488,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
+  },
+  minimizeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   liveDot: {
     width: 6,

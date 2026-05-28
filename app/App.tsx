@@ -25,13 +25,17 @@ import { FontAwesome5 } from '@expo/vector-icons';
 // Echte Push-Infrastruktur Imports
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import * as Updates from 'expo-updates';
 import Constants from 'expo-constants';
+import * as SplashScreen from 'expo-splash-screen';
 
-import { supabase } from './src/lib/supabase';
-import { syncSupportMessagesFromMatrix } from './src/lib/supportMatrix';
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+import { supabase, supabaseConfigured } from '@/lib/supabase';
+import { syncSupportMessagesFromMatrix } from '@/lib/supportMatrix';
+import { countUnreadSupportMessages, markSupportMessagesSeen } from '@/lib/supportUnread';
 import { colors, radius } from './src/theme';
 
+import { flushPendingWatchlist } from './src/lib/watchlist';
 import { SearchScreen } from './src/screens/SearchScreen';
 import { WatchlistScreen } from './src/screens/WatchlistScreen';
 import { SellScreen } from './src/screens/SellScreen';
@@ -84,30 +88,6 @@ function isInvalidRefreshTokenError(error: unknown) {
   return message.includes('Invalid Refresh Token') || message.includes('Refresh Token Not Found');
 }
 
-// Im Vordergrund übernimmt die App Chat-Badges und Live-Updates selbst.
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => {
-    const data = notification.request.content.data ?? {};
-    const suppressForegroundMessage =
-      notificationRuntimeState.appState === 'active' &&
-      isMessageNotification(data);
-    const suppressForegroundSupport =
-      notificationRuntimeState.appState === 'active' &&
-      isSupportNotification(data) &&
-      notificationRuntimeState.supportChatActive;
-
-    const suppress = suppressForegroundMessage || suppressForegroundSupport;
-
-    return {
-      shouldShowAlert: !suppress,
-      shouldShowBanner: !suppress,
-      shouldShowList: !suppress,
-      shouldPlaySound: !suppress,
-      shouldSetBadge: false,
-    };
-  },
-});
-
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -120,6 +100,7 @@ function AppShell() {
   const [tab, setTab] = useState<AppTab>('search');
   const [session, setSession] = useState<Session | null>(null);
   const [unreadTotal, setUnreadTotal] = useState(0);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
 
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(true);
@@ -147,9 +128,10 @@ function AppShell() {
     nonce: number;
   }>({ conversationId: null, nonce: 0 });
   const [openSupportSignal, setOpenSupportSignal] = useState(0);
+  const [openSupportWithChat, setOpenSupportWithChat] = useState(false);
   const [supportNotificationNonce, setSupportNotificationNonce] = useState(0);
   const [pendingOpenSupport, setPendingOpenSupport] = useState(false);
-  const [otaBootstrapping, setOtaBootstrapping] = useState(!__DEV__);
+  const [appReady, setAppReady] = useState(false);
   const lastBackPressRef = useRef(0);
   const consumeDashboardAndroidBackRef = useRef<(() => boolean) | null>(null);
   const consumeSellAndroidBackRef = useRef<(() => boolean) | null>(null);
@@ -168,36 +150,38 @@ function AppShell() {
   }, [authModalVisible, keyboardHeight, insets.bottom]);
 
   useEffect(() => {
-    if (__DEV__) return;
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        const data = notification.request.content.data ?? {};
+        const suppressForegroundMessage =
+          notificationRuntimeState.appState === 'active' &&
+          isMessageNotification(data);
+        const suppressForegroundSupport =
+          notificationRuntimeState.appState === 'active' &&
+          isSupportNotification(data) &&
+          notificationRuntimeState.supportChatActive;
 
-    let cancelled = false;
+        const suppress = suppressForegroundMessage || suppressForegroundSupport;
 
-    async function bootstrapOtaUpdate() {
-      try {
-        if (!Updates.isEnabled) return;
-
-        const result = await Updates.checkForUpdateAsync();
-        if (!cancelled && result.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          if (!cancelled) {
-            await Updates.reloadAsync();
-          }
-        }
-      } catch (error) {
-        console.warn('EAS-Update konnte nicht geladen werden:', error);
-      } finally {
-        if (!cancelled) {
-          setOtaBootstrapping(false);
-        }
-      }
-    }
-
-    bootstrapOtaUpdate();
-
-    return () => {
-      cancelled = true;
-    };
+        return {
+          shouldShowAlert: !suppress,
+          shouldShowBanner: !suppress,
+          shouldShowList: !suppress,
+          shouldPlaySound: !suppress,
+          shouldSetBadge: false,
+        };
+      },
+    });
   }, []);
+
+  useEffect(() => {
+    setAppReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!appReady) return;
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, [appReady]);
 
   // HIER EINGEBAUT: Zukunftssichere Token-Registrierung für unbegrenzt viele Geräte
   async function saveDeviceToken(userId: string) {
@@ -313,6 +297,9 @@ function AppShell() {
         return;
       }
       if (nextSession?.user?.id) {
+        if (event === 'SIGNED_IN') {
+          void flushPendingWatchlist();
+        }
         checkOnboardingStatus(nextSession.user.id);
       } else {
         setOnboardingComplete(false);
@@ -353,6 +340,24 @@ function AppShell() {
     }
   }, [session?.user?.id]);
 
+  const refreshSupportUnreadCount = useCallback(async () => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      setSupportUnreadCount(0);
+      return;
+    }
+
+    const count = await countUnreadSupportMessages(userId);
+    setSupportUnreadCount(count);
+  }, [session?.user?.id]);
+
+  const handleSupportMessagesSeen = useCallback(async () => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    await markSupportMessagesSeen(userId);
+    setSupportUnreadCount(0);
+  }, [session?.user?.id]);
+
   useEffect(() => {
     notificationRuntimeState.tab = tab;
     notificationRuntimeState.activeConversationId = activeConversationId;
@@ -380,6 +385,7 @@ function AppShell() {
     setTab('account');
     setOpenSupportSignal((current) => current + 1);
     setSupportNotificationNonce((current) => current + 1);
+    setOpenSupportWithChat(true);
   }, []);
 
   const openFromNotification = useCallback((response: Notifications.NotificationResponse | null | undefined) => {
@@ -390,9 +396,13 @@ function AppShell() {
     const data = response.notification.request.content.data ?? {};
 
     if (isSupportNotification(data)) {
-      setDetailListingId(null);
-      setTab('account');
-      setPendingOpenSupport(true);
+      if (session?.user?.id && !onboardingLoading && onboardingComplete) {
+        navigateToSupportChat();
+      } else {
+        setDetailListingId(null);
+        setTab('account');
+        setPendingOpenSupport(true);
+      }
       return;
     }
 
@@ -400,11 +410,11 @@ function AppShell() {
     setDetailListingId(null);
     setPendingChatId(conversationId);
     setTab('messages');
-  }, []);
+  }, [navigateToSupportChat, onboardingComplete, onboardingLoading, session?.user?.id]);
 
   useEffect(() => {
     if (!pendingOpenSupport) return;
-    if (!session?.user?.id || onboardingLoading || !onboardingComplete || otaBootstrapping) {
+    if (!session?.user?.id || onboardingLoading || !onboardingComplete) {
       return;
     }
 
@@ -414,24 +424,35 @@ function AppShell() {
     navigateToSupportChat,
     onboardingComplete,
     onboardingLoading,
-    otaBootstrapping,
     pendingOpenSupport,
     session?.user?.id,
   ]);
 
   useEffect(() => {
-    Notifications.getLastNotificationResponseAsync()
-      .then(openFromNotification)
-      .then(() => Notifications.clearLastNotificationResponseAsync())
-      .catch((error) => {
-        console.error('Notification-Startziel konnte nicht verarbeitet werden:', error);
-      });
+    let cancelled = false;
+
+    const handleColdStartNotification = () => {
+      if (cancelled) return;
+      Notifications.getLastNotificationResponseAsync()
+        .then(openFromNotification)
+        .then(() => Notifications.clearLastNotificationResponseAsync())
+        .catch((error) => {
+          console.error('Notification-Startziel konnte nicht verarbeitet werden:', error);
+        });
+    };
+
+    // Nach erstem Frame, damit Navigation nicht beim App-Start crasht.
+    const coldStartTimer = setTimeout(handleColdStartNotification, 600);
 
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       openFromNotification(response);
     });
 
-    return () => subscription.remove();
+    return () => {
+      cancelled = true;
+      clearTimeout(coldStartTimer);
+      subscription.remove();
+    };
   }, [openFromNotification]);
 
   useEffect(() => {
@@ -440,6 +461,11 @@ function AppShell() {
 
       if (isSupportNotification(data)) {
         setSupportNotificationNonce((current) => current + 1);
+        if (!notificationRuntimeState.supportChatActive) {
+          setTimeout(() => {
+            refreshSupportUnreadCount();
+          }, 400);
+        }
         return;
       }
 
@@ -461,7 +487,7 @@ function AppShell() {
     });
 
     return () => subscription.remove();
-  }, [refreshUnreadCount]);
+  }, [refreshUnreadCount, refreshSupportUnreadCount]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -484,20 +510,28 @@ function AppShell() {
   useEffect(() => {
     if (!session?.user?.id) {
       setUnreadTotal(0);
+      setSupportUnreadCount(0);
       return;
     }
 
     refreshUnreadCount();
+    refreshSupportUnreadCount();
 
     const channel = supabase
       .channel('global-badge-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
         refreshUnreadCount();
       })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, (payload) => {
+        const row = payload.new as { sender_type?: string };
+        if (row.sender_type === 'admin' && !notificationRuntimeState.supportChatActive) {
+          refreshSupportUnreadCount();
+        }
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [refreshUnreadCount, session?.user?.id, tab]);
+  }, [refreshUnreadCount, refreshSupportUnreadCount, session?.user?.id, tab]);
 
   async function handleRequestOtp() {
     if (!authEmail.trim()) {
@@ -539,6 +573,7 @@ function AppShell() {
         type: 'email',
       });
       if (error) throw error;
+      await flushPendingWatchlist();
       setAuthModalVisible(false);
       setAuthStep('email');
       setAuthEmail('');
@@ -631,7 +666,13 @@ function AppShell() {
   const renderTabContent = () => {
     switch (tab) {
       case 'search':
-        return <SearchScreen session={session} onOpenListing={setDetailListingId} />;
+        return (
+          <SearchScreen
+            session={session}
+            onOpenListing={setDetailListingId}
+            onGoLogin={() => setAuthModalVisible(true)}
+          />
+        );
       case 'favorites':
         return session
           ? <WatchlistScreen session={session} onOpenListing={setDetailListingId} />
@@ -667,10 +708,14 @@ function AppShell() {
             onSignOut={() => supabase.auth.signOut()}
             onGoLogin={() => setAuthModalVisible(true)}
             openSupportSignal={openSupportSignal}
+            openSupportWithChat={openSupportWithChat}
+            onOpenSupportWithChatHandled={() => setOpenSupportWithChat(false)}
             supportNotificationNonce={supportNotificationNonce}
             onSupportChatActiveChange={(active) => {
               notificationRuntimeState.supportChatActive = active;
             }}
+            supportUnreadCount={supportUnreadCount}
+            onSupportMessagesSeen={handleSupportMessagesSeen}
             onPushMessagesEnabled={() => {
               if (session?.user?.id) {
                 saveDeviceToken(session.user.id);
@@ -686,11 +731,14 @@ function AppShell() {
     }
   };
 
-  if (otaBootstrapping) {
+  if (!supabaseConfigured) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors?.cyan || '#00bcd4'} />
-        <Text style={styles.otaLoadingText}>Update wird geladen…</Text>
+        <Text style={styles.configErrorTitle}>Konfiguration fehlt</Text>
+        <Text style={styles.configErrorText}>
+          EXPO_PUBLIC_SUPABASE_URL und EXPO_PUBLIC_SUPABASE_ANON_KEY fehlen. Lege in app/.env.local die Werte an
+          (siehe .env.example) und starte mit: npx expo start -c
+        </Text>
       </View>
     );
   }
@@ -730,6 +778,7 @@ function AppShell() {
           listingId={detailListingId}
           session={session}
           onClose={() => setDetailListingId(null)}
+          onGoLogin={() => setAuthModalVisible(true)}
         />
       ) : null}
 
@@ -841,7 +890,12 @@ function AppShell() {
         <TabButton active={tab === 'favorites'} label="Merkliste"  onPress={() => handleTabPress('favorites')} />
         <TabButton active={tab === 'sell'}      label="Inserieren" onPress={() => handleTabPress('sell')} />
         <TabButton active={tab === 'messages'}  label="Chats"      badgeCount={unreadTotal} onPress={() => handleTabPress('messages')} />
-        <TabButton active={tab === 'account'}   label="Dashboard"  onPress={() => handleTabPress('account')} />
+        <TabButton
+          active={tab === 'account'}
+          label="Dashboard"
+          badgeCount={supportUnreadCount}
+          onPress={() => handleTabPress('account')}
+        />
       </View>
     </View>
   );
@@ -865,8 +919,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     zIndex: 9999,
   },
-  loadingContainer: { flex: 1, backgroundColor: '#2e2e2e', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#2e2e2e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 28,
+  },
   otaLoadingText: { color: '#888888', fontSize: 14, fontWeight: '600' },
+  configErrorTitle: { color: '#ffffff', fontSize: 18, fontWeight: '900', textAlign: 'center' },
+  configErrorText: { color: '#888888', fontSize: 14, lineHeight: 20, textAlign: 'center' },
 
   guestContainer: { flex: 1, backgroundColor: '#323232', paddingHorizontal: 20 },
   guestHeader: { flexDirection: 'row', alignItems: 'center' },

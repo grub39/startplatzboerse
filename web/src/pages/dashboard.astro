@@ -37,8 +37,14 @@ import Popup from '../components/Popup.astro';
                     <a href="/inserieren" class="action-btn primary-action">
                         <span style="margin-right: 8px; font-weight: bold;">＋</span> Inserat erstellen
                     </a>
-                    <button id="logout-trigger" class="action-btn secondary-action">
+                    <button type="button" id="profile-open-btn" class="action-btn secondary-action">
+                        Profil
+                    </button>
+                    <button type="button" id="logout-trigger" class="action-btn secondary-action">
                         Abmelden
+                    </button>
+                    <button type="button" id="delete-account-open-btn" class="action-btn danger-action">
+                        Konto löschen
                     </button>
                 </div>
 
@@ -89,11 +95,109 @@ import Popup from '../components/Popup.astro';
                     <input type="number" id="new-price" placeholder="0">
                     <span>€</span>
                 </div>
+                <div class="price-type-row">
+                    <label class="price-type-option">
+                        <input type="radio" name="edit-price-type" value="fixed" checked>
+                        <span>Festpreis</span>
+                    </label>
+                    <label class="price-type-option">
+                        <input type="radio" name="edit-price-type" value="vb">
+                        <span>VB</span>
+                    </label>
+                </div>
+                <div class="edit-grid">
+                    <div class="field">
+                        <label class="edit-label" for="edit-event-url">Event-Website</label>
+                        <input id="edit-event-url" class="edit-input" type="url" placeholder="https://..." maxlength="255">
+                    </div>
+                    <div class="field">
+                        <label class="edit-label" for="edit-street">Straße (optional)</label>
+                        <input id="edit-street" class="edit-input" type="text" placeholder="z. B. Unter den Linden 1" maxlength="100">
+                    </div>
+                    <div class="field row2">
+                        <div class="field">
+                            <label class="edit-label" for="edit-plz">PLZ *</label>
+                            <input id="edit-plz" class="edit-input" type="text" placeholder="10115" maxlength="12" autocomplete="postal-code">
+                        </div>
+                        <div class="field">
+                            <label class="edit-label" for="edit-location">Ort *</label>
+                            <input id="edit-location" class="edit-input" type="text" placeholder="Berlin" maxlength="100">
+                        </div>
+                    </div>
+                </div>
                 <textarea id="edit-description" placeholder="Beschreibung" rows="5" style="width:100%; margin-top: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; padding: 14px; resize: vertical; font-size: 0.95rem;"></textarea>
                 <input type="hidden" id="edit-listing-id">
                 <div class="modal-footer-btns">
                     <button onclick="document.getElementById('edit-modal').style.display='none'" class="btn-close-modal">Abbrechen</button>
                     <button id="save-price" class="btn-action-main">Speichern</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="profile-modal" class="modal-overlay" style="display:none;">
+            <div class="modal-content glass-card profile-modal-card">
+                <h3 class="profile-modal-title">Profil &amp; Konto</h3>
+                <p class="profile-modal-lead">Deine öffentlichen Angaben und Login-Daten.</p>
+                <div class="profile-form">
+                    <div class="profile-form-field">
+                        <label for="profile-first-name">Vorname</label>
+                        <input type="text" id="profile-first-name" maxlength="30" autocomplete="given-name" placeholder="Vorname">
+                    </div>
+                    <div class="profile-form-field">
+                        <label for="profile-last-name">Nachname</label>
+                        <input type="text" id="profile-last-name" maxlength="30" autocomplete="family-name" placeholder="Nachname">
+                    </div>
+                    <div class="profile-form-field">
+                        <label for="profile-nickname">Nickname</label>
+                        <input type="text" id="profile-nickname" maxlength="20" autocomplete="username" placeholder="3–20 Zeichen">
+                        <p class="field-hint">Wird öffentlich bei deinen Inseraten angezeigt.</p>
+                    </div>
+                    <div class="profile-form-field">
+                        <label for="profile-email">E-Mail (Login)</label>
+                        <input type="email" id="profile-email" readonly tabindex="-1" aria-readonly="true">
+                        <p class="field-hint">Nur zur Anzeige – Änderung der Login-E-Mail folgt später.</p>
+                    </div>
+                </div>
+                <p id="profile-save-error" class="profile-form-error" style="display:none;"></p>
+                <div class="modal-footer-btns">
+                    <button type="button" id="profile-modal-close" class="btn-close-modal">Abbrechen</button>
+                    <button type="button" id="profile-save-btn" class="btn-action-main">Speichern</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="delete-account-modal-1" class="modal-overlay" style="display:none;">
+            <div class="modal-content glass-card delete-modal-card">
+                <h3 class="delete-modal-title">Konto löschen?</h3>
+                <p class="delete-modal-lead">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                <ul class="delete-consequences">
+                    <li>Dein Profil und alle persönlichen Daten werden entfernt.</li>
+                    <li>Deine Inserate und Chats sind danach nicht mehr erreichbar.</li>
+                    <li>Deine Merkliste geht verloren.</li>
+                </ul>
+                <div class="modal-footer-btns">
+                    <button type="button" id="delete-account-cancel-1" class="btn-close-modal">Abbrechen</button>
+                    <button type="button" id="delete-account-continue" class="btn-danger-main">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="delete-account-modal-2" class="modal-overlay" style="display:none;">
+            <div class="modal-content glass-card delete-modal-card">
+                <h3 class="delete-modal-title">Wirklich löschen?</h3>
+                <p class="delete-modal-lead">Gib zur Bestätigung <strong>LÖSCHEN</strong> ein und bestätige die Folgen.</p>
+                <label class="delete-checkbox-row">
+                    <input type="checkbox" id="delete-account-ack">
+                    <span>Ich verstehe, dass mein Konto und alle zugehörigen Daten unwiderruflich gelöscht werden.</span>
+                </label>
+                <div class="profile-form-field">
+                    <label for="delete-account-confirm-text">Bestätigung</label>
+                    <input type="text" id="delete-account-confirm-text" placeholder="LÖSCHEN" autocomplete="off" spellcheck="false">
+                </div>
+                <p id="delete-account-error" class="profile-form-error" style="display:none;"></p>
+                <div class="modal-footer-btns">
+                    <button type="button" id="delete-account-back" class="btn-close-modal">Zurück</button>
+                    <button type="button" id="delete-account-confirm" class="btn-danger-main" disabled>Konto endgültig löschen</button>
                 </div>
             </div>
         </div>
@@ -206,6 +310,17 @@ import Popup from '../components/Popup.astro';
     .secondary-action { background: var(--bg-card); color: var(--text-muted); border: var(--border-card-strong); }
     .secondary-action:hover { background: var(--bg-card); color: white; border-color: rgba(255,255,255,0.15); }
 
+    .danger-action {
+        background: rgba(255, 68, 68, 0.08);
+        color: #ff6b6b;
+        border: 2px solid rgba(255, 68, 68, 0.28);
+    }
+    .danger-action:hover {
+        background: rgba(255, 68, 68, 0.14);
+        color: #ff8888;
+        border-color: rgba(255, 68, 68, 0.45);
+    }
+
     .docked-tabs {
         background: var(--bg-card);
         border-radius: 100px;
@@ -240,18 +355,133 @@ import Popup from '../components/Popup.astro';
         padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-weight: 900; 
     }
 
+    .profile-modal-card,
+    .delete-modal-card {
+        max-width: 460px;
+        text-align: left;
+        padding: 32px 28px;
+    }
+    .profile-modal-title,
+    .delete-modal-title {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: white;
+        text-align: center;
+    }
+    .profile-modal-lead,
+    .delete-modal-lead {
+        margin: 0 0 20px;
+        font-size: 0.88rem;
+        color: #888;
+        line-height: 1.5;
+        text-align: center;
+    }
+    .profile-form { display: flex; flex-direction: column; gap: 4px; }
+    .profile-form-field { margin-bottom: 12px; }
+    .profile-form-field label {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #666;
+        margin-bottom: 6px;
+    }
+    .profile-form-field input {
+        width: 100%;
+        box-sizing: border-box;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: white;
+        font-size: 0.95rem;
+        outline: none;
+    }
+    .profile-form-field input:focus { border-color: var(--cyan); }
+    .profile-form-field input:read-only {
+        opacity: 0.65;
+        cursor: not-allowed;
+        color: #aaa;
+    }
+    .field-hint {
+        margin: 6px 0 0;
+        font-size: 0.72rem;
+        color: #666;
+        line-height: 1.4;
+    }
+    .profile-form-error {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(255, 82, 82, 0.1);
+        color: #ff8a8a;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+    .delete-consequences {
+        margin: 0 0 24px;
+        padding-left: 18px;
+        color: #bbb;
+        font-size: 0.88rem;
+        line-height: 1.55;
+    }
+    .delete-consequences li { margin-bottom: 8px; }
+    .delete-checkbox-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
+        font-size: 0.85rem;
+        color: #ccc;
+        line-height: 1.45;
+        cursor: pointer;
+    }
+    .delete-checkbox-row input {
+        margin-top: 3px;
+        accent-color: #ff6b6b;
+        flex-shrink: 0;
+    }
+    .btn-danger-main {
+        flex: 1.5;
+        padding: 16px;
+        border-radius: 14px;
+        background: #ff4444;
+        border: none;
+        color: white;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-danger-main:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 68, 68, 0.35);
+    }
+    .btn-danger-main:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
     @media (max-width: 768px) {
         .dashboard-top-section { flex-direction: column; }
         .profile-card-new { flex-direction: column; text-align: center; padding: 20px; gap: 15px; }
         .profile-stats { border-left: none; border-top: 1px solid rgba(255,255,255,0.1); padding-left: 0; padding-top: 15px; width: 100%; justify-content: center; }
-        .action-buttons-column { width: 100%; flex-direction: row; }
+        .action-buttons-column {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
         .action-btn { padding: 14px; font-size: 0.85rem; }
         .docked-tabs { border-radius: 20px; padding: 4px; }
         .dock-tab { padding: 12px 4px; font-size: 0.75rem; border-radius: 16px; }
         .pill-badge { margin-left: 4px; padding: 2px 5px; }
     }
     @media (max-width: 480px) {
-        .action-buttons-column { flex-direction: column; }
+        .action-buttons-column { grid-template-columns: 1fr; }
     }
 
     .glass-card, .msg-card { background: var(--bg-card); border: 1px solid var(--border) !important; padding: 16px; border-radius: var(--radius-card); position: relative; }
@@ -284,6 +514,53 @@ import Popup from '../components/Popup.astro';
     .input-glow-wrap { display: flex; align-items: center; justify-content: center; position: relative; margin: 20px 0; }
     .input-glow-wrap span { font-size: 2.5rem; color: var(--cyan); font-weight: 900; margin-left: 5px; }
     #edit-description { min-height: 120px; font-family: inherit; }
+    .price-type-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: -6px;
+        margin-bottom: 14px;
+    }
+    .price-type-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #bdbdbd;
+        font-size: 0.78rem;
+        font-weight: 800;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+        user-select: none;
+    }
+    .price-type-option input { accent-color: var(--cyan); }
+    .edit-grid { display: grid; gap: 10px; margin: 10px 0 12px; text-align: left; }
+    .field { display: grid; gap: 6px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .edit-label {
+        color: #666;
+        font-size: 0.65rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-left: 2px;
+    }
+    .edit-input {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: transparent;
+        color: white;
+        padding: 12px 14px;
+        font-size: 0.95rem;
+        outline: none;
+    }
+    .edit-input:focus { border-color: rgba(0,188,212,0.55); box-shadow: 0 0 0 3px rgba(0,188,212,0.12); }
+    @media (max-width: 420px) {
+        .row2 { grid-template-columns: 1fr; }
+    }
 
     .dash-section { display: none; }
     .dash-section.active { display: block; animation: fadeIn 0.3s ease-in; }
@@ -307,7 +584,7 @@ import Popup from '../components/Popup.astro';
     .watch-card .eyebrow {
         display: block;
         margin: 0 0 8px;
-        padding-right: 40px;
+        padding-right: 44px;
     }
     .watch-unavailable-badge {
         display: inline-block;
@@ -331,6 +608,7 @@ import Popup from '../components/Popup.astro';
 <script>
     // Supabase Client initialisieren
     import { createClient } from '@supabase/supabase-js';
+    import { deleteAccount } from '../lib/deleteAccount';
     import {
         bindWatchlistDelegation,
         heartButtonHtml,
@@ -346,6 +624,199 @@ import Popup from '../components/Popup.astro';
 
     let deleteId = null;
     let currentUserId = null;
+    let currentProfileData = null;
+
+    const nicknameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    const nameRegex = /^[a-zA-ZÀ-ÿ\s\-]{2,30}$/;
+
+    function showModal(id: string) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'flex';
+    }
+
+    function hideModal(id: string) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    }
+
+    function setupProfileAndAccountModals(user) {
+        const profileModal = document.getElementById('profile-modal');
+        const deleteModal1 = document.getElementById('delete-account-modal-1');
+        const deleteModal2 = document.getElementById('delete-account-modal-2');
+
+        const firstNameInput = document.getElementById('profile-first-name');
+        const lastNameInput = document.getElementById('profile-last-name');
+        const nicknameInput = document.getElementById('profile-nickname');
+        const emailInput = document.getElementById('profile-email');
+        const profileError = document.getElementById('profile-save-error');
+
+        const deleteAck = document.getElementById('delete-account-ack');
+        const deleteConfirmText = document.getElementById('delete-account-confirm-text');
+        const deleteConfirmBtn = document.getElementById('delete-account-confirm');
+        const deleteAccountError = document.getElementById('delete-account-error');
+
+        function fillProfileForm() {
+            if (firstNameInput) firstNameInput.value = currentProfileData?.first_name?.trim() || '';
+            if (lastNameInput) lastNameInput.value = currentProfileData?.last_name?.trim() || '';
+            if (nicknameInput) nicknameInput.value = currentProfileData?.nickname?.trim() || '';
+            if (emailInput) {
+                emailInput.value =
+                    currentProfileData?.registered_email?.trim() ||
+                    user.email?.trim() ||
+                    '';
+            }
+            if (profileError) profileError.style.display = 'none';
+        }
+
+        function resetDeleteStep2() {
+            if (deleteAck) deleteAck.checked = false;
+            if (deleteConfirmText) deleteConfirmText.value = '';
+            if (deleteConfirmBtn) deleteConfirmBtn.disabled = true;
+            if (deleteAccountError) deleteAccountError.style.display = 'none';
+        }
+
+        function updateDeleteConfirmState() {
+            if (!deleteConfirmBtn || !deleteAck || !deleteConfirmText) return;
+            const typed = deleteConfirmText.value.trim().toUpperCase() === 'LÖSCHEN';
+            deleteConfirmBtn.disabled = !(deleteAck.checked && typed);
+        }
+
+        document.getElementById('profile-open-btn')?.addEventListener('click', () => {
+            fillProfileForm();
+            showModal('profile-modal');
+        });
+
+        document.getElementById('profile-modal-close')?.addEventListener('click', () => hideModal('profile-modal'));
+
+        profileModal?.addEventListener('click', (e) => {
+            if (e.target === profileModal) hideModal('profile-modal');
+        });
+
+        document.getElementById('profile-save-btn')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            const first_name = firstNameInput?.value.trim() || '';
+            const last_name = lastNameInput?.value.trim() || '';
+            const nickname = nicknameInput?.value.trim() || '';
+
+            if (!nameRegex.test(first_name)) {
+                if (profileError) {
+                    profileError.textContent = 'Vorname ungültig (2–30 Zeichen, nur Buchstaben).';
+                    profileError.style.display = 'block';
+                }
+                return;
+            }
+            if (!nameRegex.test(last_name)) {
+                if (profileError) {
+                    profileError.textContent = 'Nachname ungültig (2–30 Zeichen, nur Buchstaben).';
+                    profileError.style.display = 'block';
+                }
+                return;
+            }
+            if (!nicknameRegex.test(nickname)) {
+                if (profileError) {
+                    profileError.textContent = 'Nickname: 3–20 Zeichen, nur Buchstaben, Zahlen und Unterstrich.';
+                    profileError.style.display = 'block';
+                }
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Speichere…';
+
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    first_name,
+                    last_name,
+                    nickname,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', user.id);
+
+            btn.disabled = false;
+            btn.textContent = 'Speichern';
+
+            if (error) {
+                if (profileError) {
+                    profileError.textContent =
+                        error.code === '23505'
+                            ? 'Dieser Nickname ist bereits vergeben.'
+                            : `Speichern fehlgeschlagen: ${error.message}`;
+                    profileError.style.display = 'block';
+                }
+                return;
+            }
+
+            currentProfileData = {
+                ...currentProfileData,
+                first_name,
+                last_name,
+                nickname,
+            };
+
+            const nameEl = document.getElementById('profile-name');
+            if (nameEl) nameEl.textContent = nickname;
+
+            hideModal('profile-modal');
+            showPopup('Profil gespeichert', 'Deine Angaben wurden aktualisiert.');
+        });
+
+        document.getElementById('delete-account-open-btn')?.addEventListener('click', () => {
+            resetDeleteStep2();
+            showModal('delete-account-modal-1');
+        });
+
+        document.getElementById('delete-account-cancel-1')?.addEventListener('click', () => hideModal('delete-account-modal-1'));
+        deleteModal1?.addEventListener('click', (e) => {
+            if (e.target === deleteModal1) hideModal('delete-account-modal-1');
+        });
+
+        document.getElementById('delete-account-continue')?.addEventListener('click', () => {
+            hideModal('delete-account-modal-1');
+            resetDeleteStep2();
+            showModal('delete-account-modal-2');
+        });
+
+        document.getElementById('delete-account-back')?.addEventListener('click', () => {
+            hideModal('delete-account-modal-2');
+            showModal('delete-account-modal-1');
+        });
+
+        deleteModal2?.addEventListener('click', (e) => {
+            if (e.target === deleteModal2) {
+                hideModal('delete-account-modal-2');
+                resetDeleteStep2();
+            }
+        });
+
+        deleteAck?.addEventListener('change', updateDeleteConfirmState);
+        deleteConfirmText?.addEventListener('input', updateDeleteConfirmState);
+
+        deleteConfirmBtn?.addEventListener('click', async () => {
+            if (!deleteConfirmBtn || deleteConfirmBtn.disabled) return;
+
+            if (deleteAccountError) deleteAccountError.style.display = 'none';
+            deleteConfirmBtn.disabled = true;
+            deleteConfirmBtn.textContent = 'Wird gelöscht…';
+
+            const result = await deleteAccount();
+
+            if (!result.ok) {
+                if (deleteAccountError) {
+                    deleteAccountError.textContent = result.error || 'Löschen fehlgeschlagen.';
+                    deleteAccountError.style.display = 'block';
+                }
+                updateDeleteConfirmState();
+                deleteConfirmBtn.textContent = 'Konto endgültig löschen';
+                return;
+            }
+
+            hideModal('delete-account-modal-2');
+            resetDeleteStep2();
+            await supabase.auth.signOut();
+            window.location.href = '/?account_deleted=1';
+        });
+    }
 
     function showPopup(title, message, isDelete = false) {
         const popup = document.getElementById('status-popup');
@@ -594,14 +1065,34 @@ container.style.overflow = 'hidden';
 
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('nickname, updated_at, avatar_url')
+            .select('nickname, first_name, last_name, registered_email, updated_at, avatar_url')
             .eq('id', user.id)
             .single();
 
         if (profileError) console.error("Fehler beim Laden des Profils:", profileError.message);
 
+        const authEmail = user.email?.trim() || '';
+        if (profile && authEmail && !profile.registered_email) {
+            await supabase
+                .from('profiles')
+                .update({ registered_email: authEmail })
+                .eq('id', user.id);
+            profile.registered_email = authEmail;
+        }
+
+        currentProfileData = profile
+            ? {
+                first_name: profile.first_name,
+                last_name: profile.last_name,
+                nickname: profile.nickname,
+                registered_email: profile.registered_email || authEmail,
+            }
+            : { registered_email: authEmail };
+
         const nameEl = document.getElementById('profile-name');
         if (nameEl && profile?.nickname) nameEl.innerText = profile.nickname;
+
+        setupProfileAndAccountModals(user);
 
         const memberSinceEl = document.getElementById('member-since-date');
         if (memberSinceEl) {
@@ -713,11 +1204,7 @@ container.style.overflow = 'hidden';
             return '<div class="glass-card" style="' + (isArchived ? 'opacity: 0.7;' : '') + '"><span class="eyebrow">' + item.category + '</span><h3 style="margin: 10px 0 5px 0;">' + item.event_name + '</h3><div style="margin-bottom: 10px;"><p style="color:#555; font-size:0.8rem; margin:0;">Event am: ' + new Date(item.event_date).toLocaleDateString() + '</p><p style="font-size:0.7rem; margin: 2px 0 0 0;">' + statusNotice + '</p></div>' + priceHtml + '<div class="card-footer-btns">' + (!isArchived ? '<button class="btn-dash-edit" onclick="window.openEditModal(\'' + item.id + '\', \'' + item.price + '\')">Bearbeiten</button><button class="btn-dash-delete" onclick="window.askDelete(\'' + item.id + '\', \'' + item.status + '\')">Löschen</button>' : '<button class="btn-dash-delete" style="width: 100%;" onclick="window.askDelete(\'' + item.id + '\', \'archived\')">Endgültig löschen</button>') + '</div></div>';
         }).join('');
 
-        grid.querySelectorAll('.btn-dash-edit').forEach(button => {
-            button.addEventListener('click', () => {
-                window.openEditModal(button.dataset.id, button.dataset.price, button.dataset.description);
-            });
-        });
+        // onclick im Markup ruft window.openEditModal bereits auf – keine doppelten Listener nötig.
     }
 
     async function fetchWatchlist(userId) {
@@ -782,7 +1269,7 @@ container.style.overflow = 'hidden';
             return '<div class="glass-card watch-card listing-card-shell' + (isUnavailable ? ' is-unavailable' : '') + '">' +
                 heartButtonHtml(item.id) +
                 '<span class="eyebrow">' + item.category + '</span>' +
-                '<h3 style="margin:10px 0 5px 0;padding-right:40px;">' + item.event_name + '</h3>' +
+                '<h3 style="margin:10px 0 5px 0;padding-right:44px;">' + item.event_name + '</h3>' +
                 '<p style="color:#555;font-size:0.8rem;margin:0;">' + item.location + ' · ' + eventDate + '</p>' +
                 '<p style="color:#666;font-size:0.75rem;margin:4px 0 0 0;">' + (item.distance || 'Startplatz') + '</p>' +
                 unavailableHtml +
@@ -897,36 +1384,52 @@ container.style.overflow = 'hidden';
         }
     };
     
-// Öffnet das Bearbeitungsmodal und lädt die aktuelle Beschreibung
+// Öffnet das Bearbeitungsmodal und lädt die aktuellen Daten (App-Style).
     /** @param {string} id @param {string} price */
     window.openEditModal = async (id, price) => {
     const idInput = document.getElementById('edit-listing-id');
     const priceInput = document.getElementById('new-price');
     const descriptionInput = document.getElementById('edit-description');
+    const streetInput = document.getElementById('edit-street');
+    const plzInput = document.getElementById('edit-plz');
+    const locationInput = document.getElementById('edit-location');
+    const eventUrlInput = document.getElementById('edit-event-url');
     const editModal = document.getElementById('edit-modal');
+    const fixedRadio = document.querySelector('input[name="edit-price-type"][value="fixed"]');
+    const vbRadio = document.querySelector('input[name="edit-price-type"][value="vb"]');
 
     if (idInput instanceof HTMLInputElement) idInput.value = id;
     if (editModal instanceof HTMLElement) editModal.style.display = 'flex';
 
-    // Beides aus DB laden – kein Vertrauen in den Parameter
     const { data: currentItem, error } = await supabase
         .from('listings')
-        .select('price, description')
+        .select('price, price_type, description, street, plz, location, event_url, old_price')
         .eq('id', id)
         .single();
 
-    if (!error && currentItem) {
-        if (priceInput instanceof HTMLInputElement)
-            priceInput.value = currentItem.price ?? price; // Fallback auf Parameter
-        if (descriptionInput instanceof HTMLTextAreaElement)
-            descriptionInput.value = currentItem.description ?? '';
-    }
+    if (error || !currentItem) return;
+
+    if (priceInput instanceof HTMLInputElement) priceInput.value = String(currentItem.price ?? price);
+    if (descriptionInput instanceof HTMLTextAreaElement) descriptionInput.value = currentItem.description ?? '';
+    if (streetInput instanceof HTMLInputElement) streetInput.value = currentItem.street ?? '';
+    if (plzInput instanceof HTMLInputElement) plzInput.value = currentItem.plz ?? '';
+    if (locationInput instanceof HTMLInputElement) locationInput.value = currentItem.location ?? '';
+    if (eventUrlInput instanceof HTMLInputElement) eventUrlInput.value = currentItem.event_url ?? '';
+
+    const pt = currentItem.price_type === 'vb' ? 'vb' : 'fixed';
+    if (fixedRadio instanceof HTMLInputElement) fixedRadio.checked = pt === 'fixed';
+    if (vbRadio instanceof HTMLInputElement) vbRadio.checked = pt === 'vb';
 };
 
     document.getElementById('save-price')?.addEventListener('click', async () => {
         const idInput = document.getElementById('edit-listing-id');
         const priceInput = document.getElementById('new-price');
         const descriptionInput = document.getElementById('edit-description');
+        const streetInput = document.getElementById('edit-street');
+        const plzInput = document.getElementById('edit-plz');
+        const locationInput = document.getElementById('edit-location');
+        const eventUrlInput = document.getElementById('edit-event-url');
+        const priceTypeRadio = document.querySelector('input[name="edit-price-type"]:checked');
         const btn = document.getElementById('save-price');
 
         if (!(btn instanceof HTMLButtonElement)) return;
@@ -951,8 +1454,32 @@ container.style.overflow = 'hidden';
         }
 
         const descriptionValue = descriptionInput instanceof HTMLTextAreaElement ? descriptionInput.value.trim() : '';
-        /** @type {{ price: number; description: string; old_price?: number | null }} */
-        let updateData = { price: newPrice, description: descriptionValue };
+        const streetValue = streetInput instanceof HTMLInputElement ? streetInput.value.trim() : '';
+        const plzValue = plzInput instanceof HTMLInputElement ? plzInput.value.trim() : '';
+        const locationValue = locationInput instanceof HTMLInputElement ? locationInput.value.trim() : '';
+        const eventUrlValue = eventUrlInput instanceof HTMLInputElement ? eventUrlInput.value.trim() : '';
+        const priceTypeValue =
+            priceTypeRadio instanceof HTMLInputElement && priceTypeRadio.value === 'vb'
+                ? 'vb'
+                : 'fixed';
+
+        if (!plzValue || !locationValue || !Number.isFinite(newPrice)) {
+            alert('Bitte Preis, PLZ und Ort prüfen.');
+            btn.innerText = "Speichern";
+            btn.disabled = false;
+            return;
+        }
+
+        /** @type {{ price: number; description: string; street: string|null; plz: string; location: string; event_url: string|null; price_type: 'fixed'|'vb'; old_price?: number | null }} */
+        let updateData = {
+            price: newPrice,
+            description: descriptionValue,
+            street: streetValue || null,
+            plz: plzValue,
+            location: locationValue,
+            event_url: eventUrlValue || null,
+            price_type: priceTypeValue,
+        };
 
         if (!currentItem.old_price) {
             updateData.old_price = currentItem.price;

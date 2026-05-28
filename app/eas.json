@@ -7,7 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
       "env": {
+        "EXPO_PUBLIC_DISABLE_UPDATES": "1",
         "EXPO_PUBLIC_SUPABASE_URL": "https://pwestdrlibkbfkwgqkup.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZXN0ZHJsaWJrYmZrd2dxa3VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0ODYxMzksImV4cCI6MjA4NjA2MjEzOX0.rPVICq5p-IYpr4Ej8i4v-keOful4Ee6PkCrTViVhgjc"
       }
@@ -19,6 +21,7 @@
         "buildType": "apk"
       },
       "env": {
+        "EXPO_PUBLIC_DISABLE_UPDATES": "1",
         "EXPO_PUBLIC_SUPABASE_URL": "https://pwestdrlibkbfkwgqkup.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZXN0ZHJsaWJrYmZrd2dxa3VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0ODYxMzksImV4cCI6MjA4NjA2MjEzOX0.rPVICq5p-IYpr4Ej8i4v-keOful4Ee6PkCrTViVhgjc"
       }
@@ -26,6 +29,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
+        "EXPO_PUBLIC_DISABLE_UPDATES": "1",
         "EXPO_PUBLIC_SUPABASE_URL": "https://pwestdrlibkbfkwgqkup.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZXN0ZHJsaWJrYmZrd2dxa3VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0ODYxMzksImV4cCI6MjA4NjA2MjEzOX0.rPVICq5p-IYpr4Ej8i4v-keOful4Ee6PkCrTViVhgjc"
       }
