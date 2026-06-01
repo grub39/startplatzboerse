@@ -16,16 +16,35 @@ const supabase = createClient(
 );
 
 // Wir holen alle genehmigten Inserate, sortiert nach Datum (neuere zuerst)
-const { data: listings, error } = await supabase
+const listingColumns =
+  'id, user_id, category, event_name, event_date, location, distance, distance_km, price, price_type, old_price';
+
+const { data: listingsRaw, error } = await supabase
   .from('listings')
-  .select(`
-    *,
-    profiles (nickname)
-  `)
+  .select(listingColumns)
   .eq('approved', true)
   .eq('status', 'active')
   .order('created_at', { ascending: false })
   .limit(4);
+
+const sellerIds = [...new Set((listingsRaw ?? []).map((row) => row.user_id).filter(Boolean))];
+let nicknameByUserId: Record<string, string> = {};
+
+if (sellerIds.length > 0) {
+  const { data: sellers } = await supabase
+    .from('profiles_public')
+    .select('id, nickname')
+    .in('id', sellerIds);
+
+  nicknameByUserId = Object.fromEntries(
+    (sellers ?? []).map((row) => [row.id, row.nickname ?? 'Gast']),
+  );
+}
+
+const listings = (listingsRaw ?? []).map((item) => ({
+  ...item,
+  profiles: { nickname: nicknameByUserId[item.user_id] ?? 'Gast' },
+}));
 
   // ARTIKEL AUF STARTSEITE ALDEN UND SORTIEREN
  const allRatgeber = await getCollection('ratgeber');

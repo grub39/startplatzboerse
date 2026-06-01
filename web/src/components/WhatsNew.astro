@@ -52,7 +52,7 @@ const updates = [
 
         <header class="whats-new-header">
             <div>
-                <p class="whats-new-kicker">Version 2.0</p>
+                <p class="whats-new-kicker">Version 2.0.1</p>
                 <h2 id="whats-new-title">Was ist neu?</h2>
                 <p class="whats-new-lead">Die wichtigsten Neuerungen auf einen Blick.</p>
             </div>
@@ -107,20 +107,22 @@ const updates = [
         font-weight: 800;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #001015;
-        background: linear-gradient(135deg, #36d8ed 0%, #00bcd4 58%, #00a7bc 100%);
+        color: #1a0d00;
+        background: linear-gradient(135deg, #ffb347 0%, var(--orange) 52%, #e67a00 100%);
         padding: 7px 16px;
         border-radius: 999px;
         box-shadow:
-            0 2px 12px rgba(0, 188, 212, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            0 2px 14px var(--orange-glow),
+            0 0 22px rgba(255, 140, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .whats-new-pill:hover {
         transform: translateY(-1px) scale(1.03);
         box-shadow:
-            0 6px 20px rgba(0, 188, 212, 0.45),
+            0 6px 22px rgba(255, 140, 0, 0.55),
+            0 0 32px rgba(255, 140, 0, 0.42),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 
@@ -131,14 +133,20 @@ const updates = [
     .whats-new-overlay {
         position: fixed;
         inset: 0;
-        z-index: 9999;
+        z-index: 11000;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding:
+            max(20px, env(safe-area-inset-top, 0px))
+            max(20px, env(safe-area-inset-right, 0px))
+            max(20px, env(safe-area-inset-bottom, 0px))
+            max(20px, env(safe-area-inset-left, 0px));
         background: rgba(0, 0, 0, 0.72);
         backdrop-filter: blur(10px);
         animation: whats-new-fade-in 0.25s ease;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .whats-new-overlay[hidden] {
@@ -165,7 +173,9 @@ const updates = [
         position: relative;
         width: 100%;
         max-width: 560px;
-        max-height: min(88vh, 720px);
+        max-height: min(88dvh, 720px);
+        min-height: 0;
+        margin: auto;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -176,6 +186,7 @@ const updates = [
             0 24px 80px rgba(0, 0, 0, 0.55),
             0 0 0 1px rgba(0, 188, 212, 0.08);
         animation: whats-new-slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        flex-shrink: 0;
     }
 
     .whats-new-dialog-glow {
@@ -195,6 +206,7 @@ const updates = [
         gap: 16px;
         padding: 24px 24px 16px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
     }
 
     .whats-new-kicker {
@@ -246,9 +258,12 @@ const updates = [
         margin: 0;
         padding: 10px 16px 12px;
         overflow-y: auto;
-        flex: 1;
+        overscroll-behavior: contain;
+        flex: 1 1 auto;
+        min-height: 0;
         display: grid;
         gap: 8px;
+        -webkit-overflow-scrolling: touch;
     }
 
     .whats-new-item {
@@ -332,8 +347,9 @@ const updates = [
     }
 
     .whats-new-footer {
-        padding: 12px 20px 20px;
+        padding: 12px 20px max(20px, env(safe-area-inset-bottom, 0px));
         border-top: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
     }
 
     .whats-new-cta {
@@ -360,17 +376,27 @@ const updates = [
 
     @media (max-width: 480px) {
         .whats-new-overlay {
-            padding: 12px;
-            align-items: flex-end;
+            align-items: center;
+            padding:
+                max(16px, env(safe-area-inset-top, 0px))
+                max(14px, env(safe-area-inset-right, 0px))
+                max(16px, env(safe-area-inset-bottom, 0px))
+                max(14px, env(safe-area-inset-left, 0px));
         }
 
         .whats-new-dialog {
-            max-height: 92vh;
-            border-radius: 20px 20px 16px 16px;
+            max-height: calc(
+                100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px
+            );
+            border-radius: 20px;
         }
 
         .whats-new-header {
-            padding: 20px 18px 14px;
+            padding: 22px 18px 14px;
+        }
+
+        .whats-new-kicker {
+            margin-top: 2px;
         }
     }
 </style>
@@ -383,7 +409,14 @@ const updates = [
         const closeBtn = document.getElementById('whats-new-close');
         const dismissBtn = document.getElementById('whats-new-dismiss');
 
-        if (!openBtn || !overlay || !dialog || openBtn.dataset.bound === '1') return;
+        if (!openBtn || !overlay || !dialog) return;
+
+        /** Fixed innerhalb des Heroes würde auf Mobile abgeschnitten – ans document.body hängen. */
+        if (overlay.parentElement !== document.body) {
+            document.body.appendChild(overlay);
+        }
+
+        if (openBtn.dataset.bound === '1') return;
         openBtn.dataset.bound = '1';
 
         let lastFocused: HTMLElement | null = null;
@@ -391,13 +424,16 @@ const updates = [
         function openModal() {
             lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             overlay.hidden = false;
+            overlay.scrollTop = 0;
             document.body.style.overflow = 'hidden';
+            document.body.classList.add('whats-new-open');
             dialog.focus();
         }
 
         function closeModal() {
             overlay.hidden = true;
             document.body.style.overflow = '';
+            document.body.classList.remove('whats-new-open');
             lastFocused?.focus();
         }
 
@@ -417,3 +453,9 @@ const updates = [
     initWhatsNew();
     document.addEventListener('astro:page-load', initWhatsNew);
 </script>
+
+<style is:global>
+    body.whats-new-open .header-wrapper {
+        z-index: 1;
+    }
+</style>

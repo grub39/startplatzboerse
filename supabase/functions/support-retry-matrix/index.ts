@@ -6,8 +6,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://startplatzboerse.de';
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -23,13 +24,10 @@ serve(async (req) => {
       throw new Error('SUPABASE_URL oder SUPABASE_SERVICE_ROLE_KEY fehlt');
     }
 
+    const internalToken = Deno.env.get('SUPPORT_INTERNAL_TOKEN');
     const authHeader = req.headers.get('Authorization') ?? '';
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-    if (token !== serviceKey) {
-      return new Response(JSON.stringify({ success: false, error: 'Nur mit Service Role Key' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!internalToken || authHeader !== `Bearer ${internalToken}`) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
     }
 
     let hours = 72;

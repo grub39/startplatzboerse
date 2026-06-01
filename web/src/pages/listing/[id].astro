@@ -15,18 +15,26 @@ const supabase = createClient(
 
 const { data: item, error } = await supabase
   .from('listings')
-  .select('*')
+  .select(
+    'id, user_id, category, event_name, description, distance, distance_km, elevation_gain_m, elevation_loss_m, swim_dist, bike_dist, run_dist, event_date, event_url, plz, location, lat, lng, price, price_type, old_price, approved, status, created_at, listing_meta',
+  )
   .eq('id', id)
+  .eq('approved', true)
+  .eq('status', 'active')
   .maybeSingle();
 
 if (error) {
   console.error("Supabase Error:", error.message);
 }
 
+if (!item) {
+  return Astro.redirect('/404', 404);
+}
+
 // Verkäufer-Profil laden
 const sellerId = item?.user_id;
 const { data: seller } = sellerId ? await supabase
-  .from('profiles')
+  .from('profiles_public')
   .select('nickname, updated_at, avatar_url')
   .eq('id', sellerId)
   .single() : { data: null };
@@ -303,9 +311,8 @@ const seoDescription = item
                                 <h3>Verkäufer kontaktieren</h3>
                                 <p>Sende eine Nachricht, um Details oder die Übergabe zu klären.</p>
 
-                                <form id="contact-form">
+                                <form id="contact-form" data-seller-id={item.user_id}>
                                     <input type="hidden" name="listing_id" value={item.id}>
-                                    <input type="hidden" name="seller_id" value={item.user_id}>
 
                                     <textarea name="message" placeholder="Hallo, ich interessiere mich für deinen Startplatz ..." class="input-field textarea" required></textarea>
 
@@ -400,7 +407,7 @@ const seoDescription = item
             const formData = new FormData(form as HTMLFormElement);
             const messageText = formData.get('message');
             const listingId = formData.get('listing_id');
-            const sellerId = formData.get('seller_id');
+            const sellerId = (form as HTMLFormElement).dataset.sellerId;
 
             try {
                 const { data: { user } } = await supabase.auth.getUser();

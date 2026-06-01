@@ -605,9 +605,12 @@ import Footer from '../components/Footer.astro';
         updateFilterBadge();
 
         // Alle aktiven Listings laden
+        const listingColumns =
+            'id, user_id, category, event_name, event_date, location, plz, distance, distance_km, elevation_gain_m, elevation_loss_m, swim_dist, bike_dist, run_dist, price, price_type, old_price, description, lat, lng, listing_meta, approved, status, created_at';
+
         let query = supabase
             .from('listings')
-            .select('*')
+            .select(listingColumns)
             .eq('approved', true)
             .eq('status', 'active');
 

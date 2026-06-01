@@ -4,8 +4,13 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://startplatzboerse.de';
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -208,9 +213,9 @@ async function handleChatNotification(supabase: SupabaseClient, record: ChatReco
           <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #00bcd4;">Neue Nachricht erhalten!</h2>
             <p>Hallo,</p>
-            <p>du hast eine neue Nachricht bezüglich des Events <strong>${eventName}</strong> erhalten:</p>
+            <p>du hast eine neue Nachricht bezüglich des Events <strong>${escapeHtml(eventName)}</strong> erhalten:</p>
             <div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #00bcd4; font-style: italic; margin: 20px 0;">
-              "${record.content}"
+              "${escapeHtml(record.content)}"
             </div>
             <p>Klicke auf den Button, um direkt zu antworten:</p>
             <a href="https://startplatzboerse.vercel.app/chat?id=${record.conversation_id}"

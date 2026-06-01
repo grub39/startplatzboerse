@@ -80,7 +80,7 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
       try {
         const { data, error } = await supabase
           .from('listings')
-          .select('price, price_type, description, street, plz, location, event_url, old_price')
+          .select('price, price_type, description, plz, location, event_url, old_price')
           .eq('id', listingId)
           .single();
 
@@ -140,16 +140,19 @@ export function EditListingModal({ listingId, onClose, onRefresh }: Props) {
         else if (newPrice >= dbItem.old_price) oldPriceField = null;
       }
 
-      const updatePayload: any = {
+      const updatePayload: Record<string, unknown> = {
         price: newPrice,
         old_price: oldPriceField,
         description: description.trim(),
-        street: street.trim() || null,
         plz: plz.trim(),
         location: location.trim(),
         event_url: eventUrl.trim() || null,
         price_type: priceType,
       };
+      const trimmedStreet = street.trim();
+      if (trimmedStreet) {
+        updatePayload.street = trimmedStreet;
+      }
       if (finalLat && finalLng) {
         updatePayload.lat = finalLat;
         updatePayload.lng = finalLng;

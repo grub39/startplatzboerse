@@ -2,8 +2,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://startplatzboerse.de';
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -137,11 +138,7 @@ serve(async (req) => {
   if (dataErrors.length > 0) {
     console.error('delete-account data errors:', user.id, dataErrors);
     return new Response(
-      JSON.stringify({
-        ok: false,
-        error: 'Kontodaten konnten nicht vollständig gelöscht werden.',
-        details: dataErrors,
-      }),
+      JSON.stringify({ error: 'Account deletion failed. Please contact support.' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

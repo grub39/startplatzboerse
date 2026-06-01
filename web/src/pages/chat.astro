@@ -58,8 +58,8 @@ import Layout from '../layouts/Layout.astro';
                 .select(`
                     *, 
                     listings(event_name),
-                    seller:profiles!conversations_seller_id_fkey(nickname),
-                    buyer:profiles!conversations_buyer_id_fkey(nickname)
+                    seller:profiles_public!seller_id(nickname),
+                    buyer:profiles_public!buyer_id(nickname)
                 `)
                 .eq('id', conversationId)
                 .single(),
@@ -120,6 +120,10 @@ import Layout from '../layouts/Layout.astro';
         if (error) console.error("Fehler beim Markieren:", error);
     }
 
+    function escapeHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     function appendMessage(msg) {
         const container = document.getElementById('chat-window');
         if (!container || document.getElementById(`msg-${msg.id}`)) return;
@@ -128,14 +132,20 @@ import Layout from '../layouts/Layout.astro';
         const row = document.createElement('div');
         row.id = `msg-${msg.id || Date.now()}`;
         row.className = `msg-row ${isMe ? 'me' : 'other'}`;
-        
-        row.innerHTML = `
-            <div class="msg-bubble">
-                <p>${msg.content}</p>
-            </div>
-            <span class="msg-time">${msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Jetzt'}</span>
-        `;
-        
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        const p = document.createElement('p');
+        p.textContent = msg.content;
+        bubble.appendChild(p);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'msg-time';
+        timeSpan.textContent = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Jetzt';
+
+        row.appendChild(bubble);
+        row.appendChild(timeSpan);
+
         container.appendChild(row);
         scrollToBottom();
     }

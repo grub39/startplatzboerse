@@ -9,6 +9,10 @@
     --border-light: rgba(255, 255, 255, 0.05);
     --cyan: #00bcd4;
     --cyan-soft: rgba(0, 188, 212, 0.1);
+    /** Chat-Übersicht Käufer / ausgehend (dashboard .role-buyer, .is-buyer) */
+    --orange: #ff8c00;
+    --orange-soft: rgba(255, 140, 0, 0.14);
+    --orange-glow: rgba(255, 140, 0, 0.45);
     --text-main: #ffffff;
     --text-muted: #888888;
     --text-secondary: #aaaaaa;

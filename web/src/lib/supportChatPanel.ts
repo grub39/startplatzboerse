@@ -28,7 +28,9 @@ export function initSupportChatPanel(
     const loginPath = options.loginPath ?? '/login?redirect=/kontakt';
 
     const guestEl = root.querySelector<HTMLElement>('[data-support-guest]');
-    const cardEl = root.querySelector<HTMLElement>('[data-support-card]');
+    const chatContentEl = root.querySelector<HTMLElement>('[data-support-chat-content]');
+    const inputRowEl = root.querySelector<HTMLElement>('[data-support-input-row]');
+    const liveEl = root.querySelector<HTMLElement>('[data-support-live]');
     const backBtn = root.querySelector<HTMLButtonElement>('[data-support-back]');
     const messagesEl = root.querySelector<HTMLElement>('[data-support-messages]');
     const loadingEl = root.querySelector<HTMLElement>('[data-support-loading]');
@@ -68,7 +70,19 @@ export function initSupportChatPanel(
     function renderView() {
         const loggedIn = !!session?.user?.id;
         if (guestEl) guestEl.hidden = loggedIn;
-        if (cardEl) cardEl.hidden = !loggedIn;
+        if (chatContentEl) chatContentEl.hidden = !loggedIn;
+        if (liveEl) liveEl.hidden = !loggedIn;
+        if (inputRowEl) inputRowEl.classList.toggle('is-locked', !loggedIn);
+        if (inputEl) {
+            inputEl.disabled = !loggedIn || loading || sending;
+            inputEl.placeholder = loggedIn
+                ? 'Nachricht an den Support…'
+                : 'Bitte anmelden, um zu schreiben…';
+            inputEl.value = loggedIn ? inputEl.value : '';
+        }
+        if (sendBtn) {
+            sendBtn.disabled = !loggedIn || loading || sending || !inputEl?.value.trim();
+        }
     }
 
     function escapeHtml(text: string) {
@@ -120,8 +134,9 @@ export function initSupportChatPanel(
             loadingEl.hidden = !value;
             loadingEl.setAttribute('aria-hidden', value ? 'false' : 'true');
         }
-        if (inputEl) inputEl.disabled = value || sending;
-        if (sendBtn) sendBtn.disabled = value || sending || !inputEl?.value.trim();
+        const loggedIn = !!session?.user?.id;
+        if (inputEl) inputEl.disabled = !loggedIn || value || sending;
+        if (sendBtn) sendBtn.disabled = !loggedIn || value || sending || !inputEl?.value.trim();
         renderMessages();
     }
 
@@ -294,7 +309,7 @@ export function initSupportChatPanel(
             } catch (err) {
                 sending = false;
                 if (inputEl) inputEl.value = content;
-                if (sendBtn) sendBtn.disabled = false;
+                renderView();
                 console.warn('Support-Ticket anlegen:', err);
                 return;
             }
@@ -315,7 +330,7 @@ export function initSupportChatPanel(
         if (error) {
             sending = false;
             if (inputEl) inputEl.value = content;
-            if (sendBtn) sendBtn.disabled = false;
+            renderView();
             console.warn('Support senden:', error.message);
             return;
         }
@@ -337,7 +352,7 @@ export function initSupportChatPanel(
         }
 
         sending = false;
-        if (sendBtn) sendBtn.disabled = !inputEl?.value.trim();
+        renderView();
     }
 
     backBtn?.addEventListener('click', () => {
@@ -356,7 +371,10 @@ export function initSupportChatPanel(
     });
 
     inputEl?.addEventListener('input', () => {
-        if (sendBtn) sendBtn.disabled = loading || sending || !inputEl.value.trim();
+        const loggedIn = !!session?.user?.id;
+        if (sendBtn) {
+            sendBtn.disabled = !loggedIn || loading || sending || !inputEl.value.trim();
+        }
     });
 
     const supabase = getSupabase();

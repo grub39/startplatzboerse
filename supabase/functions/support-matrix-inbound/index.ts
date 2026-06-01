@@ -9,8 +9,9 @@ import {
   matrixWhoami,
 } from '../_shared/matrixSupport.ts';
 
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://startplatzboerse.de';
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -145,6 +146,12 @@ async function importRoomMessages(
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  const internalToken = Deno.env.get('SUPPORT_INTERNAL_TOKEN');
+  const authHeader = req.headers.get('Authorization') ?? '';
+  if (!internalToken || authHeader !== `Bearer ${internalToken}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
   }
 
   try {

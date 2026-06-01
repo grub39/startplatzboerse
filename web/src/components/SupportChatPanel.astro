@@ -2,17 +2,7 @@
 ---
 
 <div class="support-chat-root" data-support-panel>
-    <div class="support-chat-guest" data-support-guest hidden>
-        <p class="support-chat-guest-title">Support-Chat</p>
-        <p class="support-chat-guest-text">
-            Für den Live-Chat mit unserem Team bitte anmelden.
-        </p>
-        <a class="support-chat-login-btn" data-support-login href="/login?redirect=%2Fkontakt%3Fmode%3Dchat">
-            Jetzt anmelden
-        </a>
-    </div>
-
-    <div class="support-chat-card" data-support-card hidden>
+    <div class="support-chat-card" data-support-card>
         <header class="support-chat-header">
             <div class="support-chat-header-text">
                 <h3 class="support-chat-title">Support-Chat</h3>
@@ -20,7 +10,7 @@
                 <p class="support-chat-matrix-hint" data-support-matrix-hint hidden></p>
             </div>
             <div class="support-chat-header-actions">
-                <span class="support-chat-live">
+                <span class="support-chat-live" data-support-live>
                     <span class="support-chat-live-dot" aria-hidden="true"></span>
                     Live
                 </span>
@@ -39,13 +29,31 @@
         </header>
 
         <div class="support-chat-body">
-            <div class="support-chat-loading" data-support-loading hidden>
-                <span class="support-chat-spinner" aria-hidden="true"></span>
+            <div class="support-chat-guest" data-support-guest>
+                <div class="support-chat-guest-inner">
+                    <span class="support-chat-guest-icon" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                    <p class="support-chat-guest-text">
+                        Für den Live-Chat mit unserem Team bitte anmelden.
+                    </p>
+                    <a class="support-chat-login-btn" data-support-login href="/login?redirect=%2Fkontakt%3Fmode%3Dchat">
+                        Jetzt anmelden
+                    </a>
+                </div>
             </div>
-            <div class="support-chat-messages" data-support-messages role="log" aria-live="polite"></div>
+
+            <div class="support-chat-active" data-support-chat-content hidden>
+                <div class="support-chat-loading" data-support-loading hidden>
+                    <span class="support-chat-spinner" aria-hidden="true"></span>
+                </div>
+                <div class="support-chat-messages" data-support-messages role="log" aria-live="polite"></div>
+            </div>
         </div>
 
-        <div class="support-chat-input-row">
+        <div class="support-chat-input-row" data-support-input-row>
             <textarea
                 data-support-input
                 class="support-chat-input"
@@ -68,17 +76,39 @@
         width: 100%;
     }
 
-    .support-chat-guest,
-    .support-chat-start {
-        text-align: center;
-        padding: 28px 16px;
+    .support-chat-guest {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: #1c1c1c;
     }
 
-    .support-chat-guest-title {
-        color: white;
-        font-size: 1.05rem;
-        font-weight: 900;
-        margin: 0 0 8px;
+    .support-chat-guest[hidden] {
+        display: none !important;
+    }
+
+    .support-chat-guest-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 280px;
+    }
+
+    .support-chat-guest-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: var(--cyan-soft);
+        color: var(--cyan);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
     }
 
     .support-chat-guest-text,
@@ -87,6 +117,18 @@
         font-size: 0.88rem;
         line-height: 1.5;
         margin: 0 0 18px;
+    }
+
+    .support-chat-active {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .support-chat-active[hidden] {
+        display: none !important;
     }
 
     .support-chat-login-btn,
@@ -237,7 +279,8 @@
     }
 
     .support-chat-messages {
-        height: 100%;
+        flex: 1;
+        min-height: 0;
         overflow-y: auto;
         padding: 14px;
         display: flex;
@@ -319,14 +362,17 @@
     .support-chat-input-row {
         display: flex;
         align-items: flex-end;
-        gap: 8px;
-        padding: 8px 10px;
+        gap: 10px;
+        padding: 10px 14px 12px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         background: #242424;
+        flex-shrink: 0;
+        box-sizing: border-box;
     }
 
     .support-chat-input {
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 0;
         min-height: 44px;
         max-height: 88px;
         resize: none;
@@ -348,7 +394,7 @@
     .support-chat-send {
         width: 44px;
         height: 44px;
-        flex-shrink: 0;
+        flex: 0 0 44px;
         border: none;
         border-radius: 50%;
         background: var(--cyan);
@@ -363,6 +409,32 @@
     .support-chat-send:disabled {
         opacity: 0.45;
         cursor: not-allowed;
+    }
+
+    .support-chat-input-row.is-locked {
+        opacity: 0.55;
+        pointer-events: none;
+    }
+
+    .support-chat-live[hidden] {
+        display: none !important;
+    }
+
+    @media (max-width: 480px) {
+        .support-chat-card {
+            height: min(56dvh, 520px);
+        }
+
+        .support-chat-input-row {
+            padding: 10px 12px max(12px, env(safe-area-inset-bottom, 0px));
+            gap: 8px;
+        }
+
+        .support-chat-send {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+        }
     }
 </style>
 

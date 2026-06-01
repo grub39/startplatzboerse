@@ -1251,7 +1251,6 @@ listingForm?.addEventListener('submit', async (e) => {
             lng: finalLng,
             price: parseFloat(vals.price as string),
             price_type: vals.price_type === 'vb' ? 'vb' : 'fixed',
-            approved: true,
             status: 'active'
         };
         if ((listingMeta as { run?: unknown })?.run) {

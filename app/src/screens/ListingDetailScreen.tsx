@@ -143,7 +143,7 @@ export function ListingDetailScreen({ listingId, session, onClose, onGoLogin }: 
 
         if (data.user_id) {
           const { data: sellerData } = await supabase
-            .from('profiles')
+            .from('profiles_public')
             .select('nickname, updated_at')
             .eq('id', data.user_id)
             .single();

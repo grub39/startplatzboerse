@@ -1,6 +1,6 @@
 # Startplatzbörse
 
-Monorepo für Website (Astro) und Mobile App (Expo).
+Monorepo für Website (Astro) und Mobile App (Expo)
 
 ## Struktur
 
@@ -38,3 +38,15 @@ cd app && npm run check
 
 - **Web:** Vercel-Projekt mit Root Directory `web`
 - **App:** `cd app && eas build` / `eas update`
+
+## Firebase API Key
+
+The `google-services.json` files (`app/google-services.json` and `app/android/app/google-services.json`)
+contain a placeholder for the Firebase API key (`FIREBASE_API_KEY_REMOVED_SEE_README`).
+
+To build the app, replace the placeholder with the real key from the Firebase Console:
+1. Open [Firebase Console](https://console.firebase.google.com/) → Project `startplatzboerse-19425`
+2. Go to Project Settings → Your apps → Android app
+3. Download the `google-services.json` and place it in both locations above
+
+**Do not commit the real API key to this repository.**

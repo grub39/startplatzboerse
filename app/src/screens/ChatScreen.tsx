@@ -49,7 +49,7 @@ export function ChatScreen({
       const { data, error: fetchError } = await supabase
         .from('conversations')
         .select(
-          `id, updated_at, seller_id, buyer_id, listings(event_name), messages(is_read, sender_id), seller:profiles!conversations_seller_id_fkey(nickname), buyer:profiles!conversations_buyer_id_fkey(nickname)`
+          `id, updated_at, seller_id, buyer_id, listings(event_name), messages(is_read, sender_id), seller:profiles_public!seller_id(nickname), buyer:profiles_public!buyer_id(nickname)`
         )
         .or(`buyer_id.eq.${session.user.id},seller_id.eq.${session.user.id}`)
         .order('updated_at', { ascending: false });
