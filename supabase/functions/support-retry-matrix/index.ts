@@ -24,9 +24,11 @@ serve(async (req) => {
       throw new Error('SUPABASE_URL oder SUPABASE_SERVICE_ROLE_KEY fehlt');
     }
 
-    const internalToken = Deno.env.get('SUPPORT_INTERNAL_TOKEN');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const internalToken = Deno.env.get('SUPPORT_INTERNAL_TOKEN') ?? '';
     const authHeader = req.headers.get('Authorization') ?? '';
-    if (!internalToken || authHeader !== `Bearer ${internalToken}`) {
+    const validBearers = [serviceKey, internalToken].filter(Boolean);
+    if (!validBearers.some((t) => authHeader === `Bearer ${t}`)) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
     }
 
